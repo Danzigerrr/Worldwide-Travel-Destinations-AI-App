@@ -1,12 +1,22 @@
 # European Tour Destinations AI App
 
-## Overview
+[![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js&logoColor=white)](#)
+[![OpenAI](https://img.shields.io/badge/OpenAI-412991.svg?logo=OpenAI&logoColor=white)](#)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688.svg?&logo=FastAPI&logoColor=white)](#)
+
 
 This project is designed to explore and enhance the usability
 of the [European Tour Destinations Dataset](https://www.kaggle.com/datasets/faizadani/european-tour-destinations-dataset) 
 by leveraging modern AI tools. 
 The main goal is to provide an interactive platform that helps users explore destinations 
 through intelligent filtering and conversational interfaces.
+
+## Table of Contents
+* [Features](#features)
+* [Project Goals](#project-goals)
+* [Tools & Technologies](#tools--technologies)
+* [License](#license)
+
 
 ## Features
 
@@ -28,7 +38,7 @@ through intelligent filtering and conversational interfaces.
 ## Tools & Technologies
 
 * Next.js (Frontend)
-* Django (Backend with AI model integration)
+* FastAPI (Backend with AI model integration)
 * LLM (for chat interface and dynamic filter generation)
 * PostgreSQL / SQLite (for dataset storage)
 * Leaflet / Mapbox (for map visualization)
