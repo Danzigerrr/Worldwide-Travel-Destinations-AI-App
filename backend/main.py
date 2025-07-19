@@ -9,7 +9,7 @@ class UserMessage(BaseModel):
 app = FastAPI()
 
 
-@app.get("/chat/")
+@app.post("/chat/")
 async def root(new_message: UserMessage):
     response_text, response_sources = generate_chat_response(new_message.prompt)
     return {"message": response_text,
