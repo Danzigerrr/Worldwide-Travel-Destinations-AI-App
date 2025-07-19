@@ -24,6 +24,7 @@ debugpy==1.8.14
 decorator==5.2.1
 distro==1.9.0
 dnspython==2.7.0
+docopt==0.6.2
 durationpy==0.10
 email_validator==2.2.0
 executing==2.2.0
@@ -63,6 +64,7 @@ jupyter_client==8.6.3
 jupyter_core==5.8.1
 kubernetes==33.1.0
 langchain==0.3.26
+langchain-chroma==0.2.4
 langchain-community==0.3.27
 langchain-core==0.3.69
 langchain-openai==0.3.28
@@ -95,6 +97,7 @@ overrides==7.7.0
 packaging==25.0
 pandas==2.3.1
 parso==0.8.4
+pipreqs==0.4.13
 platformdirs==4.3.8
 posthog==5.4.0
 prompt_toolkit==3.0.51
@@ -160,6 +163,7 @@ watchfiles==1.1.0
 wcwidth==0.2.13
 websocket-client==1.8.0
 websockets==15.0.1
+yarg==0.1.10
 yarl==1.20.1
 zipp==3.23.0
 zstandard==0.23.0
