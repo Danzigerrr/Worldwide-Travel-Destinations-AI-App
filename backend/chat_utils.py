@@ -12,7 +12,10 @@ import os
 
 def load_api_key():
     load_dotenv()
-    openai.api_key = os.environ['OPENAI_API_KEY']
+    api_key = os.environ.get('OPENAI_API_KEY')
+    if not api_key:
+        raise ValueError("The environment variable 'OPENAI_API_KEY' is not set. Please set it in the '.env' file located in the project root directory.")
+    openai.api_key = api_key
 
 def get_embedding_function():
     embedding_model = "text-embedding-3-small"
@@ -36,7 +39,7 @@ def query_relevant_data(query_text: str):
 
     return results
 
-def craft_reponse(prompt, relevant_data):
+def craft_response(prompt, relevant_data):
     PROMPT_TEMPLATE = """
         Answer the following question about travelling {query} based on the following context:
         {context}
@@ -63,5 +66,5 @@ def craft_reponse(prompt, relevant_data):
 def generate_chat_response(prompt: str):
     load_api_key()
     relevant_data = query_relevant_data(prompt)
-    formatted_response, formatted_sources = craft_reponse(prompt, relevant_data)
+    formatted_response, formatted_sources = craft_response(prompt, relevant_data)
     return formatted_response, formatted_sources
