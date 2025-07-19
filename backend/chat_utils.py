@@ -14,7 +14,7 @@ class UserMessage(BaseModel):
 
 
 
-class ChatHandler:
+class ChatHandler():
 
     def __init__(self):
         self.load_api_key()
@@ -39,7 +39,6 @@ class ChatHandler:
         return db
 
     def _query_relevant_data(self, query_text: str):
-        # load the database
         results = self._db.similarity_search_with_relevance_scores(query_text, k=3)
         if len(results) == 0:
             print("Unable to find any matching results")
