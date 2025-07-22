@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from backend.api.chat.chat_utils import ChatHandler, UserMessage
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
-from .routers import auth
+from .routers import auth, destinations
+from ..data_loader import populate_the_database
 
 app = FastAPI()
 
@@ -16,13 +17,13 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
-chat_handler = ChatHandler()
 
 @app.get("/health_check/")
 def health_check():
     return "Health check complete - the app is working!"
 
 app.include_router(auth.router)
+app.include_router(destinations.router)
 
 # @app.post("/chat/")
 # async def chat(new_message: UserMessage):
