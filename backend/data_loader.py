@@ -9,7 +9,18 @@ from .api.database import SessionLocal, Base, engine
 class DataLoader:
     @staticmethod
     def load_csv(path: str) -> pd.DataFrame:
-        """Load the CSV powerfully into a DataFrame."""
+        """
+        Load a CSV file into a pandas DataFrame.
+        
+        - Casts specific columns to boolean types.
+        - Renames columns to match model attribute names.
+        
+        Args:
+            path (str): The file path to the CSV file.
+        
+        Returns:
+            pd.DataFrame: The processed DataFrame.
+        """
         df = pd.read_csv(path, index_col=0)
         # Cast trip-flag columns to boolean types
         bool_cols = ['Day trip', 'Long trip', 'One week', 'Short trip', 'Weekend']
