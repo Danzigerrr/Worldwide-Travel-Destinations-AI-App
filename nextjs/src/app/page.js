@@ -8,12 +8,15 @@ import axios from 'axios';
 const Home = () => {
   const { user, logout } = useContext(AuthContext);
   const [destinations, setDestinations] = useState([]);
-  const [destinationName, setDestinationName] = useState('');
-  const [destinationDescription, setDestinationDescription] = useState('');
+  const [destinationCity, setDestinationCity] = useState('');
+  const [destinationCountry, setDestinationCountry] = useState('');
+  const [destinationRegion, setDestinationRegion] = useState('');
+  const [destinationLongitude, setDestinationLongitude] = useState('');
+  const [destinationLatitude, setDestinationLatitude] = useState('');
   const [selectedDestinations, setSelectedDestinations] = useState([]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token") ? JSON.parse(localStorage.getItem("token")) : null;
+    const token = localStorage.getItem("token") || null;
   }, []);
 
   useEffect(() => {
@@ -40,12 +43,18 @@ const Home = () => {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:8000/destinations', {
-        name: destinationName,
-        description: destinationDescription,
+        city: destinationCity,
+        country: destinationCountry,
+        region: destinationRegion,
+        longitude: destinationLongitude,
+        latitude: destinationLatitude,
       });
       setDestinations([...destinations, response.data]);
-      setDestinationName('');
-      setDestinationDescription('');
+      setDestinationCity('');
+      setDestinationCountry('');
+      setDestinationRegion('');
+      setDestinationLongitude('');
+      setDestinationLatitude('');
     } catch (error) {
       console.error('Failed to create destination:', error);
     }
@@ -68,24 +77,57 @@ const Home = () => {
               <div className="accordion-body">
                 <form onSubmit={handleCreateDestination}>
                   <div className="mb-3">
-                    <label htmlFor="destinationName" className="form-label">Destination Name</label>
+                    <label htmlFor="destinationCity" className="form-label">Destination City</label>
                     <input
                       type="text"
                       className="form-control"
-                      id="destinationName"
-                      value={destinationName}
-                      onChange={(e) => setDestinationName(e.target.value)}
+                      id="destinationCity"
+                      value={destinationCity}
+                      onChange={(e) => setDestinationCity(e.target.value)}
                       required
                     />
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="destinationDescription" className="form-label">Destination Description</label>
+                    <label htmlFor="destinationCountry" className="form-label">Destination Country</label>
                     <input
                       type="text"
                       className="form-control"
-                      id="destinationDescription"
-                      value={destinationDescription}
-                      onChange={(e) => setDestinationDescription(e.target.value)}
+                      id="destinationCountry"
+                      value={destinationCountry}
+                      onChange={(e) => setDestinationCountry(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="destinationRegion" className="form-label">Destination Region</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="destinationRegion"
+                      value={destinationRegion}
+                      onChange={(e) => setDestinationRegion(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="destinationLongitude" className="form-label">Destination Longitude</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="destinationLongitude"
+                      value={destinationLongitude}
+                      onChange={(e) => setDestinationLongitude(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="destinationLatitude" className="form-label">Destination Latitude</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="destinationLatitude"
+                      value={destinationLatitude}
+                      onChange={(e) => setDestinationLatitude(e.target.value)}
                       required
                     />
                   </div>

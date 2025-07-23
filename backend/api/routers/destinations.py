@@ -22,6 +22,7 @@ router = APIRouter(prefix='/destinations', tags=['destinations'])
 class DestinationBase(BaseModel):
     city: str
     country: str
+    region: str
     longitude: str
     latitude: str
 
