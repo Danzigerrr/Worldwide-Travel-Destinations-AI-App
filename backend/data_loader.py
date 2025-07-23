@@ -1,4 +1,3 @@
-# data_loader.py
 import pandas as pd
 import os
 from sqlalchemy.orm import Session
