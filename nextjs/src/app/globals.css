@@ -40,3 +40,11 @@ a {
     color-scheme: dark;
   }
 }
+
+@import "ol/ol.css";
+
+#map {
+  width: 50%;
+  height: 80vh;
+}
+
