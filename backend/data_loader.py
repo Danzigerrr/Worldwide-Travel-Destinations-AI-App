@@ -29,25 +29,24 @@ class DataLoader:
                 df[col] = df[col].astype(bool)
         # Rename to match model attribute names
         df = df.rename(columns={
-            'Day trip':'day_trip', 'Long trip':'long_trip',
-            'One week':'one_week', 'Short trip':'short_trip',
-            'Weekend':'weekend'
+            'Day trip': 'day_trip', 'Long trip': 'long_trip',
+            'One week': 'one_week', 'Short trip': 'short_trip',
+            'Weekend': 'weekend'
         })
         return df
 
-    @classmethod
-    def populate_db(cls, db: Session, df: pd.DataFrame) -> None:
+    def populate_db(self, db: Session, df: pd.DataFrame) -> None:
         """
         Insert rows from DataFrame into the database using ORM.
         Skips rows already present to ensure idempotency.
         """
         for record in df.to_dict(orient='records'):
-            print(f"\nrecord: {record}\n\n")
             if not db.query(Destination).filter_by(id=record['id']).first():
                 dest = Destination(**record)
                 db.add(dest)
         db.commit()
         print(f"✓ Populated {len(df)} records")
+
 
 def populate_the_database():
     """Main entrypoint: create tables and populate DB."""

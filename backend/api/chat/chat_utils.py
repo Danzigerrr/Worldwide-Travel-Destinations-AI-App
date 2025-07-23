@@ -8,13 +8,11 @@ import os
 from pydantic import BaseModel
 
 
-
 class UserMessage(BaseModel):
     prompt: str
 
 
-
-class ChatHandler():
+class ChatHandler:
 
     def __init__(self):
         self.load_api_key()
@@ -25,7 +23,8 @@ class ChatHandler():
         load_dotenv()
         api_key = os.environ.get('OPENAI_API_KEY')
         if not api_key:
-            raise ValueError("The environment variable 'OPENAI_API_KEY' is not set. Please set it in the '.env' file located in the project root directory.")
+            raise ValueError(
+                "The environment variable 'OPENAI_API_KEY' is not set. Please set it in the '.env' file located in the project root directory.")
         openai.api_key = api_key
 
     def _get_embedding_function(self):
@@ -57,21 +56,22 @@ class ChatHandler():
         context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in relevant_data])
         prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
         prompt = prompt_template.format(query=prompt, context=context_text)
-        
+
         model = ChatOpenAI(model="gpt-4o-mini")
         response_text = model.invoke(prompt)
 
         formatted_response = f"Response: {response_text.content}"
-        
-        sources, city_name, city_id = zip(*[(doc.metadata.get("source_file", None), doc.metadata.get("city_name", None), doc.metadata.get("id", None)) for doc, _score in relevant_data])
+
+        sources, city_name, city_id = zip(
+            *[(doc.metadata.get("source_file", None), doc.metadata.get("city_name", None), doc.metadata.get("id", None))
+              for doc, _score in relevant_data])
 
         formatted_sources = "Sources:\n" + "\n".join(
             f"{source}, City: {city}, City_id: {city_id}"
             for source, city, city_id in zip(sources, city_name, city_id)
         )
-        
-        return formatted_response, formatted_sources
 
+        return formatted_response, formatted_sources
 
     def generate_chat_response(self, prompt: str):
         relevant_data = self._query_relevant_data(prompt)

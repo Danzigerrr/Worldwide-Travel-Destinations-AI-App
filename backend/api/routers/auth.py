@@ -57,7 +57,7 @@ async def create_user(db: db_dependency, create_user_request: UserCreateRequest)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestFormStrict, Depends()], db: db_dependency):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not valdiate user")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user")
     
     token = create_access_token(user.username, user.id, timedelta(minutes=20))
     return {'access_token': token, 

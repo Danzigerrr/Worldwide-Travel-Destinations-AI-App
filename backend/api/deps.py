@@ -32,10 +32,10 @@ bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 # Annotated type for injecting the Bearer token from the request header
-oauth2_bearer_deoendency = Annotated[str, Depends(oauth2_bearer)]
+oauth2_bearer_dependency = Annotated[str, Depends(oauth2_bearer)]
 
 # Dependency function that decodes the JWT token and retrieves user information
-async def get_current_user(token: oauth2_bearer_deoendency):
+async def get_current_user(token: oauth2_bearer_dependency):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get('sub')
