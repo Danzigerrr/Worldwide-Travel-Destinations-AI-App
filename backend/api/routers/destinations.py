@@ -1,19 +1,9 @@
-from langchain_openai import OpenAIEmbeddings
-from langchain_chroma import Chroma
-from langchain.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
-from dotenv import load_dotenv
-import openai
-import os
 from pydantic import BaseModel, Field
-from typing import List, Literal, Optional
-import pandas as pd
+from typing import Optional
 import uuid
-from fastapi import APIRouter, status, Depends
-from fastapi_filter import FilterDepends, with_prefix
+from fastapi import APIRouter, status
+from fastapi_filter import FilterDepends
 from fastapi_filter.contrib.sqlalchemy import Filter
-from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_selection import mutual_info_classif
 from ..models import Destination
 from ..deps import db_dependency, user_dependency
 
@@ -22,14 +12,17 @@ router = APIRouter(
     tags=['destinations']
 )
 
+
 class DestinationBase(BaseModel):
     city: str
     country: str
     longitude: str
     latitude: str
 
+
 class DestinationCreate(DestinationBase):
     pass
+
 
 class DestinationRetrieve(DestinationBase):
     id: str
@@ -102,16 +95,21 @@ class DestinationFilter(Filter):
 
     class Constants(Filter.Constants):
         model = Destination
-        
+
+
 @router.get('/{destination_id}', status_code=status.HTTP_200_OK, summary="Retrieve a single destination by its ID")
 def get_destination(db: db_dependency, user: user_dependency, destination_id: str):
     return db.query(Destination).filter(Destination.id == destination_id).first()
 
-@router.get('/', response_model=list[DestinationRetrieve], status_code=status.HTTP_200_OK, summary="List destinations with optional filters")
-def get_destinations(db: db_dependency, user: user_dependency, filters: DestinationFilter = FilterDepends(DestinationFilter)):
+
+@router.get('/', response_model=list[DestinationRetrieve], status_code=status.HTTP_200_OK,
+            summary="List destinations with optional filters")
+def get_destinations(db: db_dependency, user: user_dependency,
+                     filters: DestinationFilter = FilterDepends(DestinationFilter)):
     destinations = db.query(Destination)
     filtered_destinations = filters.filter(destinations)
     return filtered_destinations
+
 
 @router.post('/', status_code=status.HTTP_201_CREATED, summary="Create a new destination")
 def create_destination(db: db_dependency, user: user_dependency, destination: DestinationCreate):
@@ -121,11 +119,11 @@ def create_destination(db: db_dependency, user: user_dependency, destination: De
     db.refresh(db_destination)
     return db_destination
 
+
 @router.delete('/{destination_id}', status_code=status.HTTP_204_NO_CONTENT, summary="Delete a destination by its ID")
 def delete_destination(db: db_dependency, user: user_dependency, destination_id: str):
     db_destination = db.query(Destination).filter(Destination.id == destination_id).first()
     if db_destination:
         db.delete(db_destination)
         db.commit()
-    return db_destination  
-    
+    return db_destination
