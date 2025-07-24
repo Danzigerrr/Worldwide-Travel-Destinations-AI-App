@@ -93,7 +93,7 @@ class DynamicFilterGenerator:
         feature_info = self.format_features_as_string(top_features_df)
 
         prompt_template = """
-        You are a travel assistant that creates filter questions for a travel destination recommendation system.
+        You are a travel assistant that creates filter questions for a travel destinations recommendation system.
         
         Each feature in the dataset has a list of unique values:
         - Some features are binary (e.g., [0, 1]) and represent yes/no preferences.

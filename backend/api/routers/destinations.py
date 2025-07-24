@@ -98,7 +98,7 @@ class DestinationFilter(Filter):
         model = Destination
 
 
-@router.get('/{destination_id}', status_code=status.HTTP_200_OK, summary="Retrieve a single destination by its ID")
+@router.get('/{destination_id}', status_code=status.HTTP_200_OK, summary="Retrieve a single destinations by its ID")
 def get_destination(db: db_dependency, user: user_dependency, destination_id: str):
     return db.query(Destination).filter(Destination.id == destination_id).first()
 
@@ -112,7 +112,7 @@ def get_destinations(db: db_dependency, user: user_dependency,
     return filtered_destinations
 
 
-@router.post('/', status_code=status.HTTP_201_CREATED, summary="Create a new destination")
+@router.post('/', status_code=status.HTTP_201_CREATED, summary="Create a new destinations")
 def create_destination(db: db_dependency, user: user_dependency, destination: DestinationCreate):
     db_destination = Destination(**destination.model_dump(), id=str(uuid.uuid4()))
     db.add(db_destination)
@@ -121,7 +121,7 @@ def create_destination(db: db_dependency, user: user_dependency, destination: De
     return db_destination
 
 
-@router.delete('/{destination_id}', status_code=status.HTTP_204_NO_CONTENT, summary="Delete a destination by its ID")
+@router.delete('/{destination_id}', status_code=status.HTTP_204_NO_CONTENT, summary="Delete a destinations by its ID")
 def delete_destination(db: db_dependency, user: user_dependency, destination_id: str):
     db_destination = db.query(Destination).filter(Destination.id == destination_id).first()
     if db_destination:

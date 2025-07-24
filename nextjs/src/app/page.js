@@ -56,7 +56,7 @@ const Home = () => {
       setDestinationLongitude('');
       setDestinationLatitude('');
     } catch (error) {
-      console.error('Failed to create destination:', error);
+      console.error('Failed to create destinations:', error);
     }
   };
 
