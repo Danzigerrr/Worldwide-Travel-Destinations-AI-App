@@ -27,6 +27,26 @@ class DestinationCreate(DestinationBase):
 
 class DestinationRetrieve(DestinationBase):
     id: str
+    short_description: Optional[str]
+    avg_temp_monthly: Optional[str]
+    budget_level: Optional[str]
+    culture: Optional[int]
+    adventure: Optional[int]
+    nature: Optional[int]
+    beaches: Optional[int]
+    nightlife: Optional[int]
+    cuisine: Optional[int]
+    wellness: Optional[int]
+    urban: Optional[int]
+    seclusion: Optional[int]
+    day_trip: Optional[bool]
+    short_trip: Optional[bool]
+    one_week: Optional[bool]
+    long_trip: Optional[bool]
+    weekend: Optional[bool]
+
+    class Config:
+        orm_mode = True
 
 
 class DestinationFilter(Filter):

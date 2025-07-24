@@ -41,9 +41,7 @@ export default function DestinationDetailsPage() {
                 {destination.city}, {destination.country}
             </h1>
             <p><strong>Region:</strong> {destination.region}</p>
-            <p><strong>Description:</strong> {destination.short_description}</p>
             <p><strong>Coords:</strong> {destination.latitude}, {destination.longitude}</p>
-            <p><strong>Budget:</strong> {destination.budget_level}</p>
 
             <h2 className="mt-4 text-xl">Scores</h2>
             <ul className="list-disc ml-5">
