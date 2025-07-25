@@ -15,7 +15,7 @@ class Destination(Base):
     avg_temp_monthly = Column(String, nullable=True)  # Stored as JSON string
     budget_level = Column(String, nullable=True)
     
-    # Scores from 1–5 for various themes
+    # Scores from 1 to 5 for various themes
     culture = Column(Integer)
     adventure = Column(Integer)
     nature = Column(Integer)

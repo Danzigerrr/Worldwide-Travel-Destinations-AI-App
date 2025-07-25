@@ -10,29 +10,26 @@ from .database import SessionLocal
 
 load_dotenv()
 
-# Retrieve JWT configuration from environment variables (.env)
-SECRET_KEY = os.getenv("AUTH_SECRET_KEY")
-ALGORITHM = os.getenv("AUTH_ALGORITHM")
+SECRET_KEY = os.getenv('AUTH_SECRET_KEY')
+ALGORITHM = os.getenv('AUTH_ALGORITHM')
 
-# Dependency function for obtaining a database session
+
 def get_db():
     db = SessionLocal()
     try:
-        yield db  
+        yield db
     finally:
-        db.close() 
+        db.close()
 
-# Annotated type for injecting a database session using FastAPI's dependency system
+
 db_dependency = Annotated[Session, Depends(get_db)]
 
-# Cryptographic context for hashing and verifying user passwords
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-
-# OAuth2 scheme for handling Bearer token authentication
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 # Annotated type for injecting the Bearer token from the request header
 oauth2_bearer_dependency = Annotated[str, Depends(oauth2_bearer)]
+
 
 # Dependency function that decodes the JWT token and retrieves user information
 async def get_current_user(token: oauth2_bearer_dependency):
@@ -41,16 +38,10 @@ async def get_current_user(token: oauth2_bearer_dependency):
         username: str = payload.get('sub')
         user_id: int = payload.get('id')
         if username is None or user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Could not validate user'
-            )
-        return {'username': username, 'user_id': user_id}
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate user')
+        return {'username': username, 'id': user_id}
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Could not validate user'
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate user')
 
-# Annotated type for injecting the currently authenticated user into route handlers
+
 user_dependency = Annotated[dict, Depends(get_current_user)]

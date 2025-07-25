@@ -3,12 +3,14 @@
 [![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js&logoColor=white)](#)
 [![OpenAI](https://img.shields.io/badge/OpenAI-412991.svg?logo=OpenAI&logoColor=white)](#)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688.svg?&logo=FastAPI&logoColor=white)](#)
+[![SQLite](https://img.shields.io/badge/SQLite-%2307405e.svg?logo=sqlite&logoColor=white)](#)
 
 
 This project is designed to explore and enhance the usability
 of the [European Tour Destinations Dataset](https://www.kaggle.com/datasets/faizadani/european-tour-destinations-dataset) 
 by leveraging modern AI tools. 
-The main goal is to provide an interactive platform that helps users explore destinations 
+The main goal is to provide an interactive platform that helps
+users explore destinations 
 through intelligent filtering and conversational interfaces.
 
 ## Table of Contents
@@ -24,10 +26,14 @@ through intelligent filtering and conversational interfaces.
 
     * Chat with an LLM to help you choose the best place to live or visit in Europe based on your personal preferences.
 
-* **Interactive Map Search**
+* **Interactive Travel Destination Search**
 
-    * Browse destinations on an interactive map.
+    * Browse destinations on an interactive map and list.
     * Apply dynamic, AI-generated filters that adapt based on the currently visible data to refine your search.
+
+* **Check out Destination Details**
+
+  * See details of a particular destination stored in the database.
 
 ## Project Goals
 
@@ -40,8 +46,8 @@ through intelligent filtering and conversational interfaces.
 * Next.js (Frontend)
 * FastAPI (Backend with AI model integration)
 * LLM (for chat interface and dynamic filter generation)
-* PostgreSQL / SQLite (for dataset storage)
-* Leaflet / Mapbox (for map visualization)
+* SQLite (for dataset storage)
+* OpenLayers (for map visualization)
 
 ## License
 
