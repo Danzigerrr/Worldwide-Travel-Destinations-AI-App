@@ -50,7 +50,8 @@ class DestinationFilter(Filter):
     city__in: Optional[list[str]] = Field(None, description="Filter by multiple cities (OR‑logic)")
 
     country: Optional[str] = Field(None, description="Filter by exact country name")
-    country__in: Optional[list[str]] = Field(None, description="Filter by multiple countries (OR‑logic)")
+    country__in: Optional[List[str]] = Field(None, description="Filter by multiple countries (OR-logic)")
+
 
     region: Optional[str] = Field(None, description="Filter by exact region")
     region__in: Optional[list[str]] = Field(None, description="Filter by multiple regions (OR‑logic)")
