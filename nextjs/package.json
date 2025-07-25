@@ -16,8 +16,14 @@
     "leaflet-defaulticon-compatibility": "^0.1.2",
     "next": "15.4.2",
     "ol": "^10.6.1",
+    "qs": "^6.14.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-leaflet": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.1.0",
+    "@types/react": "19.1.8",
+    "typescript": "5.8.3"
   }
 }
