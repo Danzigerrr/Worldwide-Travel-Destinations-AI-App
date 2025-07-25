@@ -6,8 +6,6 @@ import openai
 from openai import OpenAI
 from pydantic import BaseModel
 from typing import List, Literal, Optional
-from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_selection import mutual_info_classif
 from sqlalchemy import inspect
 from ..models import Destination
 import numpy as np
@@ -64,8 +62,8 @@ class DynamicFilterGenerator:
         2. For each, create a meaningful **filter question** in natural language.
         3. For binary: map 0 → No, 1 → Yes
         4. For categorical: assume values range from 1 (low) to 5 (high) and explain meanings if possible.
-        5. Define the value_meanings in the following format: "1: 'Minimal seclusion', 2: 'Some seclusion', 3: 'Moderate seclusion', 4: 'High seclusion', 5: 'Very high seclusion'"
-        6. Return 5 filters.
+        5. Define the value_meanings in the following format, for example for "seclusion": "1: 'Minimal seclusion', 2: 'Some seclusion', 3: 'Moderate seclusion', 4: 'High seclusion', 5: 'Very high seclusion'"
+        6. Return filters.
         
         Here are the features and their relevant values:
         {feature_info}
@@ -86,8 +84,8 @@ class DynamicFilterGenerator:
             {
                 "role": "system",
                 "content": "You are a travel assistant helping users select destinations. Based on the most "
-                           "informative features and their values from a filtered dataset, generate 5 dynamic filters "
-                           "in JSON format to help users refine their choices. Return exactly 5 filter suggestions in "
+                           "informative features and their values from a filtered dataset, generate dynamic filters "
+                           "in JSON format to help users refine their choices. Return filter suggestions in "
                            "JSON format under a `filters` field.",
             },
             {

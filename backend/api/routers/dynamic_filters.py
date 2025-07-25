@@ -29,4 +29,6 @@ def get_dynamic_filters_for_destinations(db: db_dependency, user: user_dependenc
     dynamic_filter_generator = DynamicFilterGenerator()
     dynamic_filters = dynamic_filter_generator.generate_dynamic_filters(selected_destinations)
 
+    print(dynamic_filters)
+
     return dynamic_filters
