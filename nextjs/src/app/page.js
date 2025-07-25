@@ -13,11 +13,6 @@ const Home = () => {
   const [destinationRegion, setDestinationRegion] = useState('');
   const [destinationLongitude, setDestinationLongitude] = useState('');
   const [destinationLatitude, setDestinationLatitude] = useState('');
-  const [selectedDestinations, setSelectedDestinations] = useState([]);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token") || null;
-  }, []);
 
   useEffect(() => {
     const fetchDestinations = async () => {
@@ -42,13 +37,15 @@ const Home = () => {
   const handleCreateDestination = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.post('http://localhost:8000/destinations', {
         city: destinationCity,
         country: destinationCountry,
         region: destinationRegion,
         longitude: destinationLongitude,
         latitude: destinationLatitude,
-      });
+        headers: { Authorization: `Bearer ${token}`},
+        });
       setDestinations([...destinations, response.data]);
       setDestinationCity('');
       setDestinationCountry('');

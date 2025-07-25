@@ -31,7 +31,7 @@ export default function DestinationsListPage() {
             const token = localStorage.getItem('token') || '';
             const params = {};
             Object.entries(filters).forEach(([k, v]) => {
-                if (v !== '' && v != null) {
+                if (v !== '' && v !== null && v !== undefined) {
                     if (k === 'trip_type') params[v] = true;
                     else params[k] = v;
                 }

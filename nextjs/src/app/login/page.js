@@ -13,7 +13,7 @@ const Login = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        login(username, password)
+        login(username, password);
     };
 
     const handleRegister = async (e) => {
