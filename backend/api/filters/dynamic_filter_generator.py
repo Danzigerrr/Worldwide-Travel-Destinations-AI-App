@@ -10,6 +10,8 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_selection import mutual_info_classif
 from sqlalchemy import inspect
 from ..models import Destination
+import numpy as np
+from math import e
 
 client = OpenAI()
 load_dotenv('..')
@@ -20,15 +22,18 @@ class DynamicFilter(BaseModel):
     question: str
     feature: str
     type: Literal["binary", "categorical"]
-    values: List[str]
     value_meanings: Optional[dict[str, str]]
+
+
+class DynamicFilterList(BaseModel):
+    filter_list: List[DynamicFilter]
 
 
 class DynamicFilterGenerator:
     top_n_features = 5
 
     feature_cols = [
-        "Day trip", "Long trip", "Short trip", "One week", "Weekend",
+        "day_trip", "long_trip", "short_trip", "one_week", "weekend",
         "culture", "adventure", "nature", "beaches", "nightlife",
         "cuisine", "wellness", "urban", "seclusion",
         "region_enc", "budget_level_enc"
@@ -37,56 +42,11 @@ class DynamicFilterGenerator:
     def __init__(self):
         pass
 
-    def measure_information_gain(self, dataframe):
-        df = dataframe.copy()
-
-        # Fit LabelEncoders for categorical features
-        le_budget = LabelEncoder()
-        le_region = LabelEncoder()
-
-        df["budget_level_enc"] = le_budget.fit_transform(df["budget_level"])
-        df["region_enc"] = le_region.fit_transform(df["region"])
-
-        # Map encoders
-        label_encoders = {
-            "budget_level_enc": le_budget,
-            "region_enc": le_region,
-        }
-
-        X = df[self.feature_cols]
-        y = df["label"]
-        selected = df[df["label"] == 1]
-
-        info_gains = mutual_info_classif(X, y, discrete_features='auto')
-
-        # Generate readable unique values
-        unique_values = []
-        for col in self.feature_cols:
-            values = selected[col].unique()
-            if col in label_encoders:
-                encoder = label_encoders[col]
-                decoded = encoder.inverse_transform(values)
-                unique_values.append(list(decoded))
-            else:
-                # Keep raw values for binary or numeric features
-                unique_values.append(list(values))
-
-        # Build final result
-        gain_df = pd.DataFrame({
-            "feature": self.feature_cols,
-            "info_gain": info_gains,
-            "unique_values": unique_values
-        })
-
-        gain_df = gain_df.sort_values(by="info_gain", ascending=False)
-        return gain_df.head(self.top_n_features)
-
     def format_features_as_string(self, top_features_df):
         features = []
-        for _, row in top_features_df.iterrows():
-            feature = row["feature"]
+        for feature_name, row in top_features_df.iterrows():
             values = row["unique_values"]
-            features.append(f"Feature name:'{feature}'. Feature values: {values}")
+            features.append(f"Feature name: '{feature_name}'. Feature values: {values}")
         return features
 
     def generate_filters_via_openai(self, top_features_df):
@@ -140,10 +100,10 @@ class DynamicFilterGenerator:
             model="gpt-4o-mini",
             temperature=0.8,
             input=messages,
-            text_format=list[DynamicFilter]
+            text_format=DynamicFilterList
         )
 
-        filters = response.output_parsed.filters
+        filters = response.output_parsed.filter_list
 
         return filters
 
@@ -175,7 +135,30 @@ class DynamicFilterGenerator:
 
     def generate_dynamic_filters(self, selected_destinations):
         selected_destinations = self.convert_data_into_dataframe(selected_destinations)
-        top_features_df = self.measure_information_gain(selected_destinations)
-        dynamic_filters = self.generate_filters_via_openai(top_features_df)
+        sorted_entropies = self.calculate_column_entropies(selected_destinations)
+        dynamic_filters = self.generate_filters_via_openai(sorted_entropies)
 
         return dynamic_filters
+
+    def pandas_entropy(self, column, base=None):
+        vc = pd.Series(column).value_counts(normalize=True, sort=False)
+        base = e if base is None else base
+        return -(vc * np.log(vc) / np.log(base)).sum()
+
+    def calculate_column_entropies(self, df, base=None):
+        df_to_analyse = df.copy()
+        columns_to_remove = [
+            "id", "short_description", "city", "country",
+            "longitude", "latitude", "avg_temp_monthly"
+        ]
+        df_to_analyse.drop(columns_to_remove, axis='columns', inplace=True, errors='ignore')
+
+        entropies = {col: self.pandas_entropy(df_to_analyse[col], base=base) for col in df_to_analyse.columns}
+        unique_values = {col: sorted(df_to_analyse[col].unique().tolist()) for col in df_to_analyse.columns}
+
+        result_df = pd.DataFrame({
+            "entropy": entropies,
+            "unique_values": unique_values
+        })
+
+        return result_df.sort_values(by="entropy", ascending=False).head(self.top_n_features)

@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
             axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
             localStorage.setItem('token', response.data.access_token);
             setUser(response.data);
-            router.push('/map');
+            router.push('/destinations');
         } catch (error) {
             console.log('Login Failed:', error);
         }

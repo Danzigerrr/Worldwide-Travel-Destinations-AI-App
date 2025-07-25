@@ -17,7 +17,6 @@ class DynamicFilterRetrieve(BaseModel):
     question: str
     feature: str
     type: Literal["binary", "categorical"]
-    values: List[str]
     value_meanings: Optional[dict[str, str]]
 
 
@@ -25,9 +24,8 @@ class DynamicFilterRetrieve(BaseModel):
             summary="List of dynamically generated filters")
 def get_dynamic_filters_for_destinations(db: db_dependency, user: user_dependency,
                                          filters: DestinationFilter = FilterDepends(DestinationFilter)):
-    destinations = db.query(Destination)
-    selected_destinations = filters.filter(destinations)
-
+    all_destinations = db.query(Destination)
+    selected_destinations = filters.filter(all_destinations)
     dynamic_filter_generator = DynamicFilterGenerator()
     dynamic_filters = dynamic_filter_generator.generate_dynamic_filters(selected_destinations)
 
