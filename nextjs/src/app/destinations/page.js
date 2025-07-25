@@ -65,8 +65,8 @@ function MultiSelect({ label, options = [], selected = [], onChange }) {
 export default function DestinationsListPage() {
     const router = useRouter();
     const [destinations, setDestinations] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [loadingDestinations, setLoadingDestinations] = useState(true); // Renamed for clarity
+    const [errorDestinations, setErrorDestinations] = useState(null); // Renamed for clarity
 
     // State to hold ALL possible filter values from the backend
     const [possibleFilterOptions, setPossibleFilterOptions] = useState({
@@ -74,6 +74,8 @@ export default function DestinationsListPage() {
         nature: [], beaches: [], nightlife: [], cuisine: [], wellness: [],
         urban: [], seclusion: [], trip_type: [],
     });
+    const [loadingFilterOptions, setLoadingFilterOptions] = useState(true); // New state for filter options loading
+    const [errorFilterOptions, setErrorFilterOptions] = useState(null); // New state for filter options error
 
     const initialFilters = {
         region: [], country: [], budget_level: [], culture: [], adventure: [],
@@ -141,8 +143,8 @@ export default function DestinationsListPage() {
     };
 
     const applyFilters = async () => {
-        setLoading(true);
-        setError(null);
+        setLoadingDestinations(true); // Set loading for destinations only
+        setErrorDestinations(null);
         try {
             const params = {};
 
@@ -155,13 +157,14 @@ export default function DestinationsListPage() {
             const responseData = await fetchDestinationsAndOptions(params);
 
             setDestinations(responseData.destinations);
-            setPossibleFilterOptions(responseData.possible_values);
+            // No longer updating possibleFilterOptions here, it's done once on mount
+            // setPossibleFilterOptions(responseData.possible_values);
 
         } catch (err) {
             console.error("Error applying filters:", err);
-            setError(err);
+            setErrorDestinations(err);
         } finally {
-            setLoading(false);
+            setLoadingDestinations(false);
         }
     };
 
@@ -174,17 +177,38 @@ export default function DestinationsListPage() {
         setGeneratedDynamicFilters([]); // Clear dynamic filters
     };
 
-    // Initial data load when the component mounts
-    // --- NEW useEffect for automatically applying filters when 'filters' state changes ---
+    // Effect to fetch initial filter options ONCE when the component mounts
     useEffect(() => {
-        // This effect will run on initial mount (filters is initialFilters)
-        // and whenever the 'filters' state is updated (e.g., by handleDynamicFilterSelection or resetFilters)
-        applyFilters();
-    }, [filters]); // Dependency array: run this effect whenever 'filters' changes
+        const fetchInitialFilterOptions = async () => {
+            setLoadingFilterOptions(true);
+            setErrorFilterOptions(null);
+            try {
+                const responseData = await fetchDestinationsAndOptions({}); // Fetch with no initial filters to get all possible values
+                setPossibleFilterOptions(responseData.possible_values);
+            } catch (err) {
+                console.error("Error fetching initial filter options:", err);
+                setErrorFilterOptions(err);
+            } finally {
+                setLoadingFilterOptions(false);
+            }
+        };
+
+        fetchInitialFilterOptions();
+    }, []); // Empty dependency array means this runs once on mount
+
+    // Effect to fetch destinations whenever filters change
+    useEffect(() => {
+        // Only fetch destinations if filter options have been loaded.
+        // This prevents an initial double-fetch of destinations.
+        if (!loadingFilterOptions) {
+            applyFilters();
+        }
+    }, [filters, loadingFilterOptions]); // Dependency array: run this effect whenever 'filters' or 'loadingFilterOptions' changes
 
     const humanize = s => s.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()); // Improved humanize for 'budget_level' etc.
 
     // Memoize sorted options for performance and consistent order
+    // Ensure these only sort after possibleFilterOptions are loaded
     const sortedRegionOptions = useMemo(() => possibleFilterOptions.region.sort(), [possibleFilterOptions.region]);
     const sortedCountryOptions = useMemo(() => possibleFilterOptions.country.sort(), [possibleFilterOptions.country]);
     const sortedBudgetOptions = useMemo(() => possibleFilterOptions.budget_level.sort(), [possibleFilterOptions.budget_level]);
@@ -202,12 +226,20 @@ export default function DestinationsListPage() {
     const sortedTripTypeOptions = useMemo(() => possibleFilterOptions.trip_type.sort(), [possibleFilterOptions.trip_type]);
 
 
-    if (loading) return <p>Loading destinations…</p>;
-    if (error) return <p className="text-red-600">Error: {error.message}</p>;
+    // Render loading state for the entire page if initial filter options are still loading
+    if (loadingFilterOptions) {
+        return <p>Loading page...</p>; // Or a more elaborate full-page loader
+    }
+
+    // Render error for initial filter options if any
+    if (errorFilterOptions) {
+        return <p className="text-red-600">Error loading initial filters: {errorFilterOptions.message}</p>;
+    }
+
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl mb-4">Destinations ({destinations.length})</h1>
+            <h1 className="text-2xl mb-4">Destinations searcher</h1>
 
             {/* Existing Filters Section */}
             <div className="mb-6 p-4 bg-gray-50 rounded space-y-4">
@@ -286,7 +318,13 @@ export default function DestinationsListPage() {
             </div>
 
             {/* Destinations List */}
-            <DestinationsList destinations={destinations} tripTypes={possibleFilterOptions.trip_type} humanize={humanize} router={router} />
+            <hr className="my-6" /> {/* Optional separator */}
+            <h2 className="text-xl mb-4">Available Destinations ({destinations.length})</h2>
+            {loadingDestinations && <p>Loading destinations…</p>}
+            {errorDestinations && <p className="text-red-600">Error loading destinations: {errorDestinations.message}</p>}
+            {!loadingDestinations && !errorDestinations && (
+                <DestinationsList destinations={destinations} tripTypes={possibleFilterOptions.trip_type} humanize={humanize} router={router} />
+            )}
         </div>
     );
 }
