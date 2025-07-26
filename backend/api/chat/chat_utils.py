@@ -1,79 +1,81 @@
-from langchain_openai import OpenAIEmbeddings
-from langchain_chroma import Chroma
-from langchain.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
-from dotenv import load_dotenv
+import uuid
+
 import openai
 import os
-from pydantic import BaseModel
-
-
-class UserMessage(BaseModel):
-    prompt: str
+from dotenv import load_dotenv
+from langchain.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.prompts import ChatPromptTemplate
+from langchain_chroma import Chroma
+from langchain_openai import OpenAIEmbeddings
+from fastapi import HTTPException, status
 
 
 class ChatHandler:
-
     def __init__(self):
         self.load_api_key()
-        self._embedding_function = self._get_embedding_function()
-        self._db = self._get_chroma_db()
+        self._embedding = OpenAIEmbeddings(model="text-embedding-3-small")
+        self._db = Chroma(persist_directory="../chroma", embedding_function=self._embedding)
+        self._memories = {}
 
     def load_api_key(self):
         load_dotenv()
-        api_key = os.environ.get('OPENAI_API_KEY')
+        api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
-            raise ValueError(
-                "The environment variable 'OPENAI_API_KEY' is not set. Please set it in the '.env' file located in the project root directory.")
+            raise ValueError("OPENAI_API_KEY not set")
         openai.api_key = api_key
 
-    def _get_embedding_function(self):
-        embedding_model = "text-embedding-3-small"
-        embedding_function = OpenAIEmbeddings(model=embedding_model)
-        return embedding_function
+    def create_session(self):
+        sid = str(uuid.uuid4())
+        self._memories[sid] = ConversationBufferWindowMemory(k=2, memory_key="chat_history", return_messages=True)
+        return sid
 
-    def _get_chroma_db(self):
-        CHROMA_PATH = "../chroma"
-        db = Chroma(persist_directory=CHROMA_PATH, embedding_function=self._embedding_function)
-        return db
+    def _query_relevant(self, text):
+        return self._db.similarity_search_with_relevance_scores(text, k=3)
 
-    def _query_relevant_data(self, query_text: str):
-        results = self._db.similarity_search_with_relevance_scores(query_text, k=3)
-        if len(results) == 0:
-            print("Unable to find any matching results")
-        else:
-            print("Results:\n")
-            for result in results:
-                print(f"score: {result[1]}\n, the city: {result[0]}\n--------\n")
+    def _compose_prompt(self, user_prompt, relevant_docs, memory):
+        PROMPT = """
+        You are a helpful assistant. Use the conversation history and reference context to answer:
+        Conversation History:
+        {history}
 
-        return results
+        Context from docs:
+        {context}
 
-    def _craft_response(self, prompt, relevant_data):
-        PROMPT_TEMPLATE = """
-            Answer the following question about travelling {query} based on the following context:
-            {context}
+        Question:
+        {query}
         """
-        context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in relevant_data])
-        prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-        prompt = prompt_template.format(query=prompt, context=context_text)
-
-        model = ChatOpenAI(model="gpt-4o-mini")
-        response_text = model.invoke(prompt)
-
-        formatted_response = f"Response: {response_text.content}"
-
-        sources, city_name, city_id = zip(
-            *[(doc.metadata.get("source_file", None), doc.metadata.get("city_name", None), doc.metadata.get("id", None))
-              for doc, _score in relevant_data])
-
-        formatted_sources = "Sources:\n" + "\n".join(
-            f"{source}, City: {city}, City_id: {city_id}"
-            for source, city, city_id in zip(sources, city_name, city_id)
+        history = "\n".join(
+            f"{m.type}: {m.content}" for m in memory.load_memory_variables({})["chat_history"]
         )
+        context = "\n---\n".join(doc.page_content for doc, _ in relevant_docs)
+        template = ChatPromptTemplate.from_template(PROMPT)
+        return template.format(history=history, context=context, query=user_prompt)
 
-        return formatted_response, formatted_sources
+    def generate_chat_response(self, prompt: str, session_id: str):
+        if session_id not in self._memories:
+            raise HTTPException(status_code=400, detail="Invalid session_id")
+        memory = self._memories[session_id]
+        relevant = self._query_relevant(prompt)
+        full_prompt = self._compose_prompt(prompt, relevant, memory)
+        model = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.5)
+        # run chain
+        resp = model.generate([{"role": "system", "content": full_prompt}])
+        assistant_msg = resp.generations[0][0].text
+        # update history: add user + assistant
+        memory.chat_memory.add_user_message(prompt)
+        memory.chat_memory.add_ai_message(assistant_msg)
+        sources = "\n".join(
+            f"{doc.metadata.get('source_file')} (id={doc.metadata.get('id')})"
+            for doc, _ in relevant
+        )
+        return assistant_msg, sources
 
-    def generate_chat_response(self, prompt: str):
-        relevant_data = self._query_relevant_data(prompt)
-        formatted_response, formatted_sources = self._craft_response(prompt, relevant_data)
-        return formatted_response, formatted_sources
+    def get_memory(self, session_id: str) -> ConversationBufferWindowMemory | None:
+            return self._memories.get(session_id)
+
+    def retrieve_history(self, session_id: str):
+        memory = self.get_memory(session_id)
+        if not memory:
+            return None
+        return memory.buffer_as_messages
