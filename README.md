@@ -12,11 +12,15 @@ This project is still under development. Keep in mind, that currently only some 
 
 ## 📌 Table of Contents
 
-* [Key Features](#key-features)
-* [Project Goals](#project-goals)
-* [Dataset Description](#dataset-description)
-* [Tools & Technologies](#tools--technologies)
-* [License](#license)
+- [💡 Key Features](#-key-features)
+   * [🧠 Conversational AI Assistant](#-conversational-ai-assistant)
+   * [🔍 Interactive Destination Search](#-interactive-destination-search)
+   * [📍 Destination Detail View](#-destination-detail-view)
+- [🎯 Project Goals](#-project-goals)
+- [🗃 Dataset Description](#-dataset-description)
+   * [Example Use Cases](#example-use-cases)
+- [🛠 Tools & Technologies](#-tools-technologies)
+- [📄 License](#-license)
 
 ---
 
