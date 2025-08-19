@@ -4,9 +4,9 @@ import openai
 import os
 from dotenv import load_dotenv
 from typing import List
-
+import psycopg 
 from langchain_openai.chat_models import ChatOpenAI
-from langchain_community.chat_message_histories import PostgresChatMessageHistory
+from langchain_postgres import PostgresChatMessageHistory
 from langchain.prompts import ChatPromptTemplate
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
@@ -52,13 +52,22 @@ class ChatHandler:
         openai.api_key = api_key
 
     def _get_history_for_session(self, session_id: str):
-        """
-        Retrieves the history object for a given session from the database.
-        """
-        return PostgresChatMessageHistory(
-            session_id=session_id,
-            connection_string=self.connection_string,
-        )
+            """
+            Establishes a connection and retrieves the history object for a given session.
+            """
+            # Create a new connection instance for each call.
+            # This is a simple and common pattern to avoid issues with thread safety in FastAPI.
+            try:
+                conn = psycopg.connect(self.connection_string)
+                return PostgresChatMessageHistory(
+                    "message_store", 
+                    session_id,
+                    sync_connection=conn
+                )
+            except Exception as e:
+                # Handle connection errors gracefully
+                print(f"❌ Database connection failed. Error: {e}")
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to connect to the database.")
     
     def create_session(self):
         """
