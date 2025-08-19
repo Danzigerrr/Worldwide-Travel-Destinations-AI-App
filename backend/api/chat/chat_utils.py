@@ -13,6 +13,7 @@ from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
 import psycopg
 from sqlmodel import Field, Session, SQLModel, create_engine, select 
 from datetime import datetime, timezone
+from psycopg.rows import dict_row
 
 # --- SQLModel Definitions for Users and Chats ---
 class User(SQLModel, table=True):
@@ -120,26 +121,6 @@ class ChatHandler:
         new_chat = await self.create_chat(user_id=user_id)
         return new_chat.id
 
-    # --- LangChain Chat History Management (for 'messages' table) ---
-    def _get_langchain_chat_history(self, chat_id: uuid.UUID):
-        """
-        Establishes a connection to PostgreSQL and retrieves the LangChain
-        chat history object for a given chat_id (which is session_id for LangChain).
-        """
-        try:
-            # Establish a new psycopg connection for the chat history operations.
-            # This is done for each call to ensure thread safety in FastAPI.
-            conn = psycopg.connect(self.supabase_connection_string)
-            return PostgresChatMessageHistory(
-                "messages",  # The name of the table where messages are stored
-                str(chat_id), # LangChain's PostgresChatMessageHistory expects session_id as a string
-                sync_connection=conn
-            )
-        except Exception as e:
-            print(f"❌ Database connection failed for chat history. Error: {e}")
-            # Raise an HTTPException to propagate the error to the FastAPI client
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to connect to the message history database.")
-
     def _query_relevant(self, text):
         """Queries the Chroma database for documents similar to the user's prompt."""
         return self._db.similarity_search_with_relevance_scores(text, k=3)
@@ -165,6 +146,62 @@ class ChatHandler:
         template = ChatPromptTemplate.from_template(PROMPT)
         return template.format(history=history_str, context=context, query=user_prompt)
 
+    async def _retrieve_sorted_messages(
+        self, chat_id: uuid.UUID
+    ) -> Optional[List[dict]]:
+        """
+        Retrieves messages from the database sorted by created_at ascending.
+        """
+        try:
+            # Proper async connection context
+            async with await psycopg.AsyncConnection.connect(self.supabase_connection_string) as conn:
+                async with conn.cursor(row_factory=dict_row) as cursor:
+                    await cursor.execute(
+                        """
+                        SELECT message
+                        FROM messages
+                        WHERE session_id = %s
+                        ORDER BY created_at ASC;
+                        """,
+                        (str(chat_id),),
+                    )
+                    records = await cursor.fetchall()
+                    return records
+        except Exception as e:
+            print(f"❌ Error retrieving messages: {e}")
+            return None
+
+    async def retrieve_history(self, chat_id: uuid.UUID) -> Optional[List[BaseMessage]]:
+        """
+        Public method to fetch chat history as LangChain message objects,
+        ensuring chronological order by created_at.
+        """
+        messages_db = await self._retrieve_sorted_messages(chat_id)
+        if not messages_db:
+            return None
+
+        messages: List[BaseMessage] = []
+        for entry in messages_db:
+            message_data = entry.get("message")
+            if not message_data:
+                continue
+
+            mtype = message_data.get("type", "human")
+            content = message_data.get("content")
+            metadata = message_data.get("metadata", {})
+
+            if content is None:
+                # Skip or assign default
+                continue
+
+            if mtype == "ai":
+                messages.append(AIMessage(content=content, metadata=metadata))
+            else:  # human
+                messages.append(HumanMessage(content=content, metadata=metadata))
+
+
+        return messages
+    
     async def generate_chat_response(self, prompt: str, chat_id: uuid.UUID, user_id: uuid.UUID):
         """
         Generates a chat response, storing messages in the 'messages' table
@@ -184,6 +221,11 @@ class ChatHandler:
         messages_for_prompt = langchain_chat_history.messages[-3:]
 
         relevant = self._query_relevant(prompt)
+        sources = "\n".join(
+            f"{doc.metadata.get('source_file', 'N/A')} (id={doc.metadata.get('id', 'N/A')})"
+            for doc, _ in relevant
+        )
+        
         full_prompt = self._compose_prompt(prompt, relevant, messages_for_prompt)
 
         model = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.5)
@@ -193,7 +235,11 @@ class ChatHandler:
 
         # Store the AI's response.
         # PostgresChatMessageHistory handles saving this into the JSONB 'message' column.
-        langchain_chat_history.add_ai_message(assistant_msg_content)
+        ai_message = AIMessage(
+            content=assistant_msg_content,
+            metadata={"sources": sources}
+        )
+        langchain_chat_history.add_ai_message(ai_message)
 
         # Update the 'updated_at' timestamp for the chat session in the chats table
         with self._get_db_session() as session:
@@ -203,18 +249,5 @@ class ChatHandler:
                 session.add(chat)
                 session.commit()
         
-        sources = "\n".join(
-            f"{doc.metadata.get('source_file', 'N/A')} (id={doc.metadata.get('id', 'N/A')})"
-            for doc, _ in relevant
-        )
-        return assistant_msg_content, sources
 
-    async def retrieve_history(self, chat_id: uuid.UUID) -> Optional[List[BaseMessage]]:
-        """
-        Retrieves the full list of messages from the database for a specific chat.
-        """
-        langchain_chat_history = self._get_langchain_chat_history(chat_id)
-        messages = langchain_chat_history.messages
-        if not messages:
-            return None
-        return messages
+        return assistant_msg_content, sources

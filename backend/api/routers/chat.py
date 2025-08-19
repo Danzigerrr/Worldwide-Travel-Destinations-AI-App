@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 import uuid
 from datetime import datetime
+import operator
 
 
 # --- Pydantic Models (add for User and Chat creation/retrieval) ---
@@ -29,8 +30,8 @@ class ChatMessageResponse(BaseModel):
 class MessageEntry(BaseModel):
     role: str
     content: str
-    created_at: datetime
     user_id: Optional[uuid.UUID] = None
+    sources: Optional[str] = None
 
 class ConversationRetrieve(BaseModel):
     chat_id: uuid.UUID
@@ -78,20 +79,46 @@ async def chat_endpoint(req: ChatRequest):
     print("respo:", message, sources)
     return ChatMessageResponse(message=message, sources=sources, chat_id=chat_id)
 
+
 @router.get("/{chat_id}", response_model=ConversationRetrieve)
 async def get_conversation(chat_id: uuid.UUID):
     """
-    Retrieves the conversation history for a specific chat ID.
+    Retrieves the conversation history for a specific chat ID,
+    assigning the message role based on the message type.
     """
-    msgs = await handler.retrieve_history(chat_id) # Await the async method
-    if msgs is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat session not found or has no messages.")
+    msgs = await handler.retrieve_history(chat_id)
+    if not msgs:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Chat session not found or has no messages."
+        )
+    
+    # print(msgs)
+    msgs = sorted(msgs, key=operator.itemgetter("created_at"))
     
     # Map LangChain BaseMessage objects to your Pydantic MessageEntry
     history = []
     for m in msgs:
-        entry = {"role": m.type, "content": m.content}
-        history.append(entry)
+        # Use the `m.type` attribute to determine the role
+        role = m.type
         
+        # Extract the metadata if available
+        if role == "human":
+            user_id = m.metadata.get("user_id")
+            entry = {
+                "role": role, 
+                "content": m.content,
+                "user_id": user_id 
+            }
+        else:
+            sources = m.metadata.get("sources")
+            entry = {
+                "role": role, 
+                "content": m.content,
+                "sources": sources 
+            }
+        history.append(entry)
+    
     return ConversationRetrieve(chat_id=chat_id, history=history)
+
 
