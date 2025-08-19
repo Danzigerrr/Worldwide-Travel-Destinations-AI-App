@@ -49,6 +49,12 @@ through intelligent filtering and conversational interfaces.
 * SQLite (for dataset storage)
 * OpenLayers (for map visualization)
 
+## Todo list
+* Add running instructions to the main README.md
+* Add readme files to backend and frontend
+* create conversational bot with memory - frontend
+* 
+
 ## License
 
 This project is licensed under the GNU GPL v3.0. See [LICENSE](LICENSE) for details.
