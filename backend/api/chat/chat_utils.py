@@ -1,10 +1,8 @@
 import os
 import uuid
 import openai
-import os
 from dotenv import load_dotenv
-from typing import List
-import psycopg 
+from typing import List, Optional
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_postgres import PostgresChatMessageHistory
 from langchain.prompts import ChatPromptTemplate
@@ -12,29 +10,58 @@ from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from fastapi import HTTPException, status
 from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
-from langchain.memory import ConversationBufferWindowMemory
+import psycopg
+from sqlmodel import Field, Session, SQLModel, create_engine, select 
+from datetime import datetime, timezone
 
+# --- SQLModel Definitions for Users and Chats ---
+class User(SQLModel, table=True):
+    """Represents a user in the system."""
+    __tablename__ = "users"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, sa_column_kwargs={"default": "gen_random_uuid()"})
+    username: str = Field(unique=True, index=True)
+    email: str = Field(unique=True, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class Chat(SQLModel, table=True):
+    """Represents a chat session, linked to a user."""
+    __tablename__ = "chats"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, sa_column_kwargs={"default": "gen_random_uuid()"})
+    user_id: uuid.UUID = Field(foreign_key="users.id", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, sa_column_kwargs={"onupdate": "now()"})
+
+# --- ChatHandler Class ---
 class ChatHandler:
     """
-    Manages chat sessions with a PostgreSQL database (Supabase) for persistent memory.
+    Manages chat sessions, users, and message history with Supabase (PostgreSQL).
+    It orchestrates interactions with the 'users', 'chats', and 'messages' tables.
     """
     def __init__(self):
-        # Load environment variables (including SUPABASE_CONNECTION_STRING)
         load_dotenv()
         self.load_api_key()
 
-        # Initialize the Chroma DB for document retrieval
+        # Initialize Chroma DB for document retrieval (remains the same)
         self._embedding = OpenAIEmbeddings(model="text-embedding-3-small")
         self._db = Chroma(persist_directory="./chat/chroma", embedding_function=self._embedding)
         self.check_if_db_loaded_successfully()
 
         # Get the Supabase connection string from environment variables
-        self.connection_string = os.environ.get("SUPABASE_CONNECTION_STRING")
-        if not self.connection_string:
+        self.supabase_connection_string = os.environ.get("SUPABASE_CONNECTION_STRING")
+        if not self.supabase_connection_string:
             raise ValueError("SUPABASE_CONNECTION_STRING not set in environment.")
+        
+        # Initialize SQLModel engine for 'users' and 'chats' tables
+        self.sqlmodel_engine = create_engine(self.supabase_connection_string)
+        # Create SQLModel-managed tables (users, chats) if they don't exist
+        SQLModel.metadata.create_all(self.sqlmodel_engine)
+
+    def _get_db_session(self):
+        """Helper to get a new SQLModel database session."""
+        return Session(self.sqlmodel_engine)
 
     def check_if_db_loaded_successfully(self):
-        # ... (This method remains the same)
+        """Validates that the Chroma DB is loaded and contains documents."""
         try:
             count = self._db._collection.count()
             if count > 0:
@@ -42,45 +69,83 @@ class ChatHandler:
             else:
                 print("⚠️ Chroma DB loaded, but is empty. Make sure your data is persisted.")
         except Exception as e:
-            print(f"❌ Error connecting to Chroma DB. Error: {e}")
+            print(f"❌ Error connecting to Chroma DB. Ensure the path is correct and the database is not corrupted. Error: {e}")
 
     def load_api_key(self):
-        # ... (This method remains the same)
+        """Loads the OpenAI API key from environment variables."""
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY not set")
         openai.api_key = api_key
 
-    def _get_history_for_session(self, session_id: str):
-            """
-            Establishes a connection and retrieves the history object for a given session.
-            """
-            # Create a new connection instance for each call.
-            # This is a simple and common pattern to avoid issues with thread safety in FastAPI.
-            try:
-                conn = psycopg.connect(self.connection_string)
-                return PostgresChatMessageHistory(
-                    "message_store", 
-                    session_id,
-                    sync_connection=conn
-                )
-            except Exception as e:
-                # Handle connection errors gracefully
-                print(f"❌ Database connection failed. Error: {e}")
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to connect to the database.")
-    
-    def create_session(self):
+    # --- Chat Management Methods ---
+    async def create_chat(self, user_id: uuid.UUID) -> Chat:
+        """Creates a new chat session linked to a user."""
+        with self._get_db_session() as session:
+            # Verify user exists
+            user = session.get(User, user_id)
+            if not user:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for chat creation.")
+            
+            chat = Chat(user_id=user_id)
+            session.add(chat)
+            session.commit()
+            session.refresh(chat)
+            return chat
+
+    async def get_chat(self, chat_id: uuid.UUID) -> Optional[Chat]:
+        """Retrieves a chat session by ID."""
+        with self._get_db_session() as session:
+            return session.get(Chat, chat_id)
+
+    async def get_user_chats(self, user_id: uuid.UUID) -> List[Chat]:
+        """Retrieves all chat sessions for a given user."""
+        with self._get_db_session() as session:
+            chats = session.exec(select(Chat).where(Chat.user_id == user_id).order_by(Chat.updated_at.desc())).all()
+            return list(chats)
+
+    async def get_or_create_chat_session(self, chat_id: Optional[uuid.UUID], user_id: uuid.UUID) -> uuid.UUID:
         """
-        Creates a new chat session with a unique ID.
+        Gets an existing chat session or creates a new one, returning its ID.
+        This ID will be used as LangChain's session_id for the messages table.
         """
-        return str(uuid.uuid4())
+        if chat_id:
+            chat = await self.get_chat(chat_id)
+            # Ensure chat exists and belongs to the specified user
+            if chat and chat.user_id == user_id:
+                return chat.id
+            print(f"Warning: Chat ID {chat_id} not found or does not belong to user {user_id}. Creating new chat.")
         
+        # If no valid chat_id provided or not found/owned, create a new chat
+        new_chat = await self.create_chat(user_id=user_id)
+        return new_chat.id
+
+    # --- LangChain Chat History Management (for 'messages' table) ---
+    def _get_langchain_chat_history(self, chat_id: uuid.UUID):
+        """
+        Establishes a connection to PostgreSQL and retrieves the LangChain
+        chat history object for a given chat_id (which is session_id for LangChain).
+        """
+        try:
+            # Establish a new psycopg connection for the chat history operations.
+            # This is done for each call to ensure thread safety in FastAPI.
+            conn = psycopg.connect(self.supabase_connection_string)
+            return PostgresChatMessageHistory(
+                "messages",  # The name of the table where messages are stored
+                str(chat_id), # LangChain's PostgresChatMessageHistory expects session_id as a string
+                sync_connection=conn
+            )
+        except Exception as e:
+            print(f"❌ Database connection failed for chat history. Error: {e}")
+            # Raise an HTTPException to propagate the error to the FastAPI client
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to connect to the message history database.")
+
     def _query_relevant(self, text):
-        # ... (This method remains the same)
+        """Queries the Chroma database for documents similar to the user's prompt."""
         return self._db.similarity_search_with_relevance_scores(text, k=3)
 
     def _compose_prompt(self, user_prompt, relevant_docs, history: List[BaseMessage]):
-        # ... (This method remains the same)
+        """Composes a detailed prompt for the LLM."""
         PROMPT = """
         You are a helpful assistant. Use the conversation history and reference context to answer:
         Conversation History:
@@ -92,6 +157,7 @@ class ChatHandler:
         Question:
         {query}
         """
+        # Ensure the history is formatted correctly
         history_str = "\n".join(
             f"{'Human' if isinstance(m, HumanMessage) else 'AI'}: {m.content}" for m in history
         )
@@ -99,42 +165,56 @@ class ChatHandler:
         template = ChatPromptTemplate.from_template(PROMPT)
         return template.format(history=history_str, context=context, query=user_prompt)
 
-    def generate_chat_response(self, prompt: str, session_id: str):
+    async def generate_chat_response(self, prompt: str, chat_id: uuid.UUID, user_id: uuid.UUID):
         """
-        Generates a chat response using a database-backed memory.
+        Generates a chat response, storing messages in the 'messages' table
+        using LangChain's history manager.
         """
-        chat_history = self._get_history_for_session(session_id)
+        # Get the LangChain history manager for this specific chat
+        langchain_chat_history = self._get_langchain_chat_history(chat_id)
         
-        # Use the last 3 messages for a context window of 3 (k=3)
-        all_messages = chat_history.messages
-        messages_to_prompt = all_messages[-3:]
+        # Store the user's message. The user_id is passed as metadata.
+        # PostgresChatMessageHistory handles saving this into the JSONB 'message' column.
+        langchain_chat_history.add_user_message(
+            HumanMessage(content=prompt, metadata={"user_id": str(user_id)})
+        )
+        
+        # Fetch up-to-date messages for prompt context
+        # Note: `messages` is a property that gets messages from the database.
+        messages_for_prompt = langchain_chat_history.messages[-3:]
 
         relevant = self._query_relevant(prompt)
-        full_prompt = self._compose_prompt(prompt, relevant, messages_to_prompt)
+        full_prompt = self._compose_prompt(prompt, relevant, messages_for_prompt)
 
-        model = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.5)
+        model = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.5)
         
         resp = model.invoke(full_prompt)
-        assistant_msg = resp.content
+        assistant_msg_content = resp.content
 
-        # Add messages to the database, they are now persisted
-        chat_history.add_user_message(prompt)
-        chat_history.add_ai_message(assistant_msg)
+        # Store the AI's response.
+        # PostgresChatMessageHistory handles saving this into the JSONB 'message' column.
+        langchain_chat_history.add_ai_message(assistant_msg_content)
+
+        # Update the 'updated_at' timestamp for the chat session in the chats table
+        with self._get_db_session() as session:
+            chat = session.get(Chat, chat_id)
+            if chat:
+                chat.updated_at = datetime.utcnow()
+                session.add(chat)
+                session.commit()
         
         sources = "\n".join(
             f"{doc.metadata.get('source_file', 'N/A')} (id={doc.metadata.get('id', 'N/A')})"
             for doc, _ in relevant
         )
-        return assistant_msg, sources
+        return assistant_msg_content, sources
 
-    def retrieve_history(self, session_id: str):
+    async def retrieve_history(self, chat_id: uuid.UUID) -> Optional[List[BaseMessage]]:
         """
-        Retrieves the full list of messages from the database.
+        Retrieves the full list of messages from the database for a specific chat.
         """
-        chat_history = self._get_history_for_session(session_id)
-        
-        # If the messages list is empty, the session does not exist.
-        if not chat_history.messages:
+        langchain_chat_history = self._get_langchain_chat_history(chat_id)
+        messages = langchain_chat_history.messages
+        if not messages:
             return None
-        return chat_history.messages
-    
+        return messages
