@@ -215,6 +215,7 @@ export default function ChatPage() {
                                                                             size="sm"
                                                                             href={`/destinations/${id}`}
                                                                             className="text-nowrap"
+                                                                            target="_blank"
                                                                         >
                                                                             {city_name}
                                                                         </Button>
