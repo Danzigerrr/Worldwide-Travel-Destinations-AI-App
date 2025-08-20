@@ -43,7 +43,8 @@ export default function ChatPage() {
             if (user) {
                 setIsLoadingChats(true);
                 try {
-                    const response = await axios.get(`http://localhost:8000/chat/users/${user.id}/chats/`);
+                    const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+                    const response = await axios.get(`${backendApiUrl}/chat/users/${user.id}/chats/`);
                     setUserChats(response.data);
                 } catch (error) {
                     console.error('Failed to fetch user chats:', error);
@@ -61,7 +62,8 @@ export default function ChatPage() {
             if (chatId) {
                 setIsLoadingHistory(true);
                 try {
-                    const response = await axios.get(`http://localhost:8000/chat/${chatId}`);
+                    const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+                    const response = await axios.get(`${backendApiUrl}/chat/${chatId}`);
                     setMessages(response.data.history);
                 } catch (error) {
                     console.error('Failed to fetch chat history:', error);
@@ -78,7 +80,8 @@ export default function ChatPage() {
 
     const handleNewChat = async () => {
         try {
-            const response = await axios.post('http://localhost:8000/chat/chats/', { user_id: user.id });
+            const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+            const response = await axios.post(`${backendApiUrl}/chat/chats/`, { user_id: user.id });
             const newChatId = response.data.id;
             setChatId(newChatId);
             router.push(`/chat?id=${newChatId}`);
@@ -98,7 +101,8 @@ export default function ChatPage() {
         setInput('');
 
         try {
-            const response = await axios.post('http://localhost:8000/chat/', {
+            const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+            const response = await axios.post(`${backendApiUrl}/chat/`, {
                 prompt: input,
                 chat_id: chatId,
                 user_id: user.id,
@@ -109,7 +113,7 @@ export default function ChatPage() {
             setMessages(prev => [...prev.filter(msg => msg.role !== 'temp'), newAiMessage]);
 
             // Re-fetch history to ensure state is synchronized with the backend
-            const historyResponse = await axios.get(`http://localhost:8000/chat/${response.data.chat_id}`);
+            const historyResponse = await axios.get(`${backendApiUrl}/chat/${response.data.chat_id}`);
             setMessages(historyResponse.data.history);
 
             setChatId(response.data.chat_id);

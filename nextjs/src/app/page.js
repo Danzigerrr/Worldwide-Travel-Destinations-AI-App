@@ -18,8 +18,9 @@ const Home = () => {
     const fetchDestinations = async () => {
       try {
         const token = localStorage.getItem('token'); 
+        const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
         const [destinationsResponse] = await Promise.all([
-          axios.get('http://localhost:8000/destinations/destinations', {
+          axios.get(`${backendApiUrl}/destinations/destinations`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
@@ -38,7 +39,8 @@ const Home = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:8000/destinations', {
+      const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+      const response = await axios.post(`${backendApiUrl}/destinations`, {
         city: destinationCity,
         country: destinationCountry,
         region: destinationRegion,

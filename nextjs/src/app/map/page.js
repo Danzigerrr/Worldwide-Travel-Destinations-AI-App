@@ -9,7 +9,8 @@ export default function DestinationsPage() {
 
     useEffect(() => {
         const token = localStorage.getItem("token") || "";
-        axios.get("http://localhost:8000/destinations", {
+        const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+        axios.get(`${backendApiUrl}/destinations`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
         })
             .then(res => setDestinations(res.data))

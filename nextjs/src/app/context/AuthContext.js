@@ -35,8 +35,9 @@ export const AuthProvider = ({ children }) => {
             params.append('username', username);
             params.append('password', password);
 
+            const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
             const response = await axios.post(
-            'http://localhost:8000/auth/token',
+            `${backendApiUrl}/auth/token`,
             params.toString(),
             { headers: {'Content-Type': 'application/x-www-form-urlencoded'} }
             );

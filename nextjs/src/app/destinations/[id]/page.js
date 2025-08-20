@@ -16,8 +16,9 @@ export default function DestinationDetailsPage() {
         (async () => {
             try {
                 const token = localStorage.getItem("token") || "";
+                const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
                 const res = await axios.get(
-                    `http://localhost:8000/destinations/${destinationId}`,
+                    `${backendApiUrl}/destinations/${destinationId}`,
                     {
                         headers: token ? { Authorization: `Bearer ${token}` } : {},
                     }
