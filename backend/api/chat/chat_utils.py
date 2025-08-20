@@ -188,7 +188,6 @@ class ChatHandler:
         parsed_data = json.loads(json_string)
         
         for entry in parsed_data:
-            print(f"entry:{entry}")
             message_data = entry["message"]
             if not message_data:
                 continue
@@ -228,8 +227,6 @@ class ChatHandler:
 
         # Query the Chroma DB for relevant documents based on the prompt
         relevant = self._query_relevant(prompt)
-        print(f"\n\n#### relevant: {relevant}\n\n")
-        print("first score:", relevant[0][0])
         sources = "\n".join(
             f"{doc.metadata.get('source_file', 'N/A')} (id={doc.metadata.get('id', 'N/A')}, city_name={doc.metadata.get('city_name', 'N/A')})"
             for doc, score in relevant if score > 0
@@ -311,7 +308,6 @@ class ChatHandler:
         if records_to_insert:
             try:
                 response = self.supabase.table("messages").insert(records_to_insert).execute()
-                print(f"✅ Successfully saved {len(records_to_insert)} messages for chat {chat_id}")
                 return response.data
             except Exception as e:
                 print(f"❌ Error saving messages to Supabase: {e}")

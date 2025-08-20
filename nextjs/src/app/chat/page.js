@@ -189,11 +189,11 @@ export default function ChatPage() {
                                                 style={{ maxWidth: '75%' }}
                                             >
                                                 <small className="text-muted">{msg.role === 'human' ? 'You' : 'AI'}</small>
-                                                <p className="mb-0">
-                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                        {msg.content}
-                                                    </ReactMarkdown>
-                                                    </p>
+                                                
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                    {msg.content}
+                                                </ReactMarkdown>
+                                                 
                                                 {/* Check if sources exist and are a non-empty string */}
                                                 {msg.role === 'ai' && msg.sources && typeof msg.sources === 'string' && msg.sources.trim().length > 0 && (
                                                     <div className="mt-2">
