@@ -4,7 +4,6 @@ import "./globals.css";
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { AuthProvider } from './context/AuthContext';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 const inter = Inter({ subsets: ['latin'] });
 

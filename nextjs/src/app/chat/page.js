@@ -110,19 +110,17 @@ export default function ChatPage() {
 
             // Update state with the full conversation from the API response
             const newAiMessage = { role: 'ai', content: response.data.message, sources: response.data.sources };
-            setMessages(prev => [...prev.filter(msg => msg.role !== 'temp'), newAiMessage]);
-
+            setMessages(prev => [...prev, newAiMessage]);
+            
             // Re-fetch history to ensure state is synchronized with the backend
             const historyResponse = await axios.get(`${backendApiUrl}/chat/${response.data.chat_id}`);
             setMessages(historyResponse.data.history);
 
             setChatId(response.data.chat_id);
-            router.push(`/chat?id=${response.data.chat_id}`, undefined, { shallow: true });
+            router.push(`/chat?id=${response.data.chat_id}`);
 
         } catch (error) {
             console.error('Failed to send message:', error);
-            // Revert temporary message on error
-            setMessages(prev => prev.filter(msg => msg.role !== 'temp'));
         } finally {
             setIsSending(false);
         }
