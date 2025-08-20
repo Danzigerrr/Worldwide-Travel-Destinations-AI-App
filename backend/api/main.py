@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
-from .routers import auth, destinations, dynamic_filters
+from .routers import auth, destinations, dynamic_filters, chat
 
 app = FastAPI()
 
@@ -25,3 +25,4 @@ def health_check():
 app.include_router(auth.router)
 app.include_router(destinations.router)
 app.include_router(dynamic_filters.router)
+app.include_router(chat.router)

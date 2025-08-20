@@ -11,9 +11,9 @@ from ..models import Destination
 import numpy as np
 from math import e
 
-client = OpenAI()
 load_dotenv('..')
 openai.api_key = os.environ['OPENAI_API_KEY']
+client = OpenAI()
 
 
 class DynamicFilter(BaseModel):

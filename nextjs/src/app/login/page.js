@@ -19,7 +19,8 @@ const Login = () => {
     const handleRegister = async (e) => {
       e.preventDefault();
       try {
-        const response = await axios.post('http://localhost:8000/auth', {
+        const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+        const response = await axios.post(`${backendApiUrl}/auth`, {
           username: registerUsername,
           password: registerPassword,
         });

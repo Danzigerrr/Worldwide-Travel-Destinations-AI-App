@@ -1,9 +1,5 @@
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-
+@import 'bootstrap/dist/css/bootstrap.min.css';
 
 :root {
   --background: #ffffff;
@@ -55,5 +51,21 @@ a {
   height: 80vh;
 }
 
+
+.markdown-container h3 {
+  font-size: 1.5rem;
+  color: #007bff; /* Bootstrap primary color */
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-container ul {
+  list-style-type: disc;
+  padding-left: 2rem;
+}
+
+.markdown-container strong {
+  color: #343a40;
+}
 
 

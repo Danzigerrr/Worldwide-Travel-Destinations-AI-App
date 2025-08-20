@@ -106,7 +106,8 @@ export default function DestinationsListPage() {
         const token = localStorage.getItem('token') || '';
         const header = token ? { Authorization: `Bearer ${token}` } : {};
         console.log("params:", params);
-        const res = await axios.get(`http://localhost:8000/destinations?${queryString}`, {
+        const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+        const res = await axios.get(`${backendApiUrl}/destinations?${queryString}`, {
             headers: header,
         });
         return res.data;
@@ -127,8 +128,8 @@ export default function DestinationsListPage() {
 
             const token = localStorage.getItem('token') || '';
             const header = token ? { Authorization: `Bearer ${token}` } : {};
-
-            const res = await axios.get(`http://localhost:8000/dynamic_filters?${queryString}`, {
+            const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+            const res = await axios.get(`${backendApiUrl}/dynamic_filters?${queryString}`, {
                 headers: header,
             });
 
