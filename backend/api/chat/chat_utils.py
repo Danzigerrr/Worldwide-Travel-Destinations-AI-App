@@ -14,6 +14,9 @@ import psycopg
 from sqlmodel import Field, Session, SQLModel, create_engine, select 
 from datetime import datetime, timezone
 from psycopg.rows import dict_row
+from supabase import create_client, Client
+import json
+
 
 # --- SQLModel Definitions for Users and Chats ---
 class User(SQLModel, table=True):
@@ -56,6 +59,10 @@ class ChatHandler:
         self.sqlmodel_engine = create_engine(self.supabase_connection_string)
         # Create SQLModel-managed tables (users, chats) if they don't exist
         SQLModel.metadata.create_all(self.sqlmodel_engine)
+        
+        url: str = os.environ.get("SUPABASE_URL")
+        key: str = os.environ.get("SUPABASE_KEY")
+        self.supabase: Client = create_client(url, key)
 
     def _get_db_session(self):
         """Helper to get a new SQLModel database session."""
@@ -153,20 +160,15 @@ class ChatHandler:
         Retrieves messages from the database sorted by created_at ascending.
         """
         try:
-            # Proper async connection context
-            async with await psycopg.AsyncConnection.connect(self.supabase_connection_string) as conn:
-                async with conn.cursor(row_factory=dict_row) as cursor:
-                    await cursor.execute(
-                        """
-                        SELECT message
-                        FROM messages
-                        WHERE session_id = %s
-                        ORDER BY created_at ASC;
-                        """,
-                        (str(chat_id),),
-                    )
-                    records = await cursor.fetchall()
-                    return records
+            response = (
+                self.supabase.table("messages")
+                .select("*")
+                .eq("session_id", str(chat_id))
+                .order("created_at", desc=False)
+                .execute()
+            )
+            return response
+
         except Exception as e:
             print(f"❌ Error retrieving messages: {e}")
             return None
@@ -181,24 +183,24 @@ class ChatHandler:
             return None
 
         messages: List[BaseMessage] = []
-        for entry in messages_db:
-            message_data = entry.get("message")
+        
+        json_string = json.dumps(messages_db.data)
+        parsed_data = json.loads(json_string)
+        
+        for entry in parsed_data:
+            print(f"entry:{entry}")
+            message_data = entry["message"]
             if not message_data:
                 continue
 
-            mtype = message_data.get("type", "human")
-            content = message_data.get("content")
-            metadata = message_data.get("metadata", {})
-
-            if content is None:
-                # Skip or assign default
-                continue
-
+            content = entry['message']['data']['content']
+            metadata = entry['message']['data']['metadata']
+            mtype = entry['message']['type']
+            
             if mtype == "ai":
                 messages.append(AIMessage(content=content, metadata=metadata))
             else:  # human
                 messages.append(HumanMessage(content=content, metadata=metadata))
-
 
         return messages
     

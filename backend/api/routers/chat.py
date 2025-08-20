@@ -93,9 +93,6 @@ async def get_conversation(chat_id: uuid.UUID):
             detail="Chat session not found or has no messages."
         )
     
-    # print(msgs)
-    msgs = sorted(msgs, key=operator.itemgetter("created_at"))
-    
     # Map LangChain BaseMessage objects to your Pydantic MessageEntry
     history = []
     for m in msgs:
