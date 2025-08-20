@@ -228,8 +228,9 @@ class ChatHandler:
 
         # Query the Chroma DB for relevant documents based on the prompt
         relevant = self._query_relevant(prompt)
+        print(f"\n\n#### relevant: {relevant}\n\n")
         sources = "\n".join(
-            f"{doc.metadata.get('source_file', 'N/A')} (id={doc.metadata.get('id', 'N/A')})"
+            f"{doc.metadata.get('source_file', 'N/A')} (id={doc.metadata.get('id', 'N/A')}, city_name={doc.metadata.get('city_name', 'N/A')})"
             for doc, _ in relevant
         )
         
