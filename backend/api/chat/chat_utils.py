@@ -204,52 +204,118 @@ class ChatHandler:
 
         return messages
     
+
     async def generate_chat_response(self, prompt: str, chat_id: uuid.UUID, user_id: uuid.UUID):
         """
-        Generates a chat response, storing messages in the 'messages' table
-        using LangChain's history manager.
+        Generates a chat response, storing messages using the save_messages method.
+        This version replaces LangChain's internal history management with manual saving.
         """
-        # Get the LangChain history manager for this specific chat
-        langchain_chat_history = self._get_langchain_chat_history(chat_id)
-        
-        # Store the user's message. The user_id is passed as metadata.
-        # PostgresChatMessageHistory handles saving this into the JSONB 'message' column.
-        langchain_chat_history.add_user_message(
-            HumanMessage(content=prompt, metadata={"user_id": str(user_id)})
-        )
-        
-        # Fetch up-to-date messages for prompt context
-        # Note: `messages` is a property that gets messages from the database.
-        messages_for_prompt = langchain_chat_history.messages[-3:]
+        # Create the user's message object
+        user_message = HumanMessage(content=prompt, metadata={"user_id": str(user_id)})
 
+        # Manually save the user's message to the database
+        await self.save_messages(chat_id, [user_message])
+        
+        # Retrieve the full history, including the new user message, for context
+        messages_from_db = await self.retrieve_history(chat_id)
+        if not messages_from_db:
+            # This case should not be reached if the save was successful
+            # but is a good safeguard.
+            messages_from_db = [user_message]
+            
+        # Use the last 3 messages for the LLM prompt to maintain context
+        messages_for_prompt = messages_from_db[-3:]
+
+        # Query the Chroma DB for relevant documents based on the prompt
         relevant = self._query_relevant(prompt)
         sources = "\n".join(
             f"{doc.metadata.get('source_file', 'N/A')} (id={doc.metadata.get('id', 'N/A')})"
             for doc, _ in relevant
         )
         
+        # Compose the full prompt for the LLM
         full_prompt = self._compose_prompt(prompt, relevant, messages_for_prompt)
 
+        # Invoke the LLM to get a response
         model = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.5)
-        
         resp = model.invoke(full_prompt)
         assistant_msg_content = resp.content
 
-        # Store the AI's response.
-        # PostgresChatMessageHistory handles saving this into the JSONB 'message' column.
+        # Create the AI's message object with sources metadata
         ai_message = AIMessage(
             content=assistant_msg_content,
             metadata={"sources": sources}
         )
-        langchain_chat_history.add_ai_message(ai_message)
+        
+        # Manually save the AI's message to the database
+        await self.save_messages(chat_id, [ai_message])
 
         # Update the 'updated_at' timestamp for the chat session in the chats table
         with self._get_db_session() as session:
             chat = session.get(Chat, chat_id)
             if chat:
-                chat.updated_at = datetime.utcnow()
+                chat.updated_at = datetime.now(timezone.utc)
                 session.add(chat)
                 session.commit()
-        
-
+                
         return assistant_msg_content, sources
+
+
+    async def save_messages(self, chat_id: uuid.UUID, messages_to_save: List[BaseMessage]):
+        """
+        Stores a list of LangChain BaseMessage objects in the 'messages' table in Supabase.
+        Each message will be inserted as a new row. This method replicates the structure
+        expected by PostgresChatMessageHistory for consistency.
+        """
+        records_to_insert = []
+        current_time_utc = datetime.now(timezone.utc) # Use UTC for consistency
+
+        for msg in messages_to_save:
+            # Convert LangChain BaseMessage to a dictionary.
+            # BaseMessage.dict() provides most of the necessary fields.
+            msg_dict = msg.dict()
+
+            # Replicate the nested structure found in your existing data,
+            # which PostgresChatMessageHistory typically generates for the 'message' JSONB column.
+            message_jsonb_value = {
+                "lc": 1,  # LangChain version marker, often present
+                "type": msg_dict["type"],
+                "content": msg_dict["content"],
+                "data": {
+                    "id": None, # Based on your provided example entry
+                    "name": None, # Based on your provided example entry
+                    "type": msg_dict["type"], # Type is often duplicated inside 'data'
+                    "content": msg_dict["content"], # Content is often duplicated inside 'data'
+                    "example": msg_dict.get("example", False), # 'example' field might exist
+                    "metadata": msg_dict["metadata"], # Original metadata from BaseMessage
+                    "additional_kwargs": msg_dict.get("additional_kwargs", {}),
+                    "response_metadata": msg_dict.get("response_metadata", {}) # For AI responses
+                }
+            }
+
+            # Add specific fields for AI messages if they exist in the BaseMessage dict
+            if msg.type == "ai":
+                message_jsonb_value["data"]["tool_calls"] = msg_dict.get("tool_calls", [])
+                message_jsonb_value["data"]["usage_metadata"] = msg_dict.get("usage_metadata")
+                message_jsonb_value["data"]["invalid_tool_calls"] = msg_dict.get("invalid_tool_calls", [])
+
+            record = {
+                "session_id": str(chat_id),
+                "created_at": current_time_utc.isoformat(), # Store as ISO string
+                "message": message_jsonb_value # The JSONB field
+            }
+            records_to_insert.append(record)
+
+        if records_to_insert:
+            try:
+                response = self.supabase.table("messages").insert(records_to_insert).execute()
+                print(f"✅ Successfully saved {len(records_to_insert)} messages for chat {chat_id}")
+                return response.data
+            except Exception as e:
+                print(f"❌ Error saving messages to Supabase: {e}")
+                # Raise an HTTPException if you want FastAPI to catch this error
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                    detail=f"Failed to save messages to database: {str(e)}"
+                )
+        return []
