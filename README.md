@@ -5,6 +5,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688.svg?&logo=FastAPI&logoColor=white)](#)
 [![SQLite](https://img.shields.io/badge/SQLite-%2307405e.svg?logo=sqlite&logoColor=white)](#)
 [![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=fff)](#)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?logo=bootstrap&logoColor=fff)](#)
+
 
 This project is designed to explore and enhance the usability
 of the [European Tour Destinations Dataset](https://www.kaggle.com/datasets/faizadani/european-tour-destinations-dataset) 
