@@ -194,10 +194,36 @@ export default function ChatPage() {
                                                         {msg.content}
                                                     </ReactMarkdown>
                                                     </p>
-                                                {msg.sources && (
-                                                    <small className="text-muted d-block mt-2">
-                                                        Sources: {msg.sources}
-                                                    </small>
+                                                {/* Check if sources exist and are a non-empty string */}
+                                                {msg.role === 'ai' && msg.sources && typeof msg.sources === 'string' && msg.sources.trim().length > 0 && (
+                                                    <div className="mt-2">
+                                                        <small className="text-muted">Sources:</small>
+                                                        <div className="d-flex flex-wrap gap-2 mt-1">
+                                                            {/* Split the string by newline and map over each source line */}
+                                                            {msg.sources.split('\n').map((sourceLine, sourceIndex) => {
+                                                                // Regular expression to extract the city_name and id
+                                                                const match = sourceLine.match(/id=([a-f0-9-]+), city_name=(.*)\)/);
+
+                                                                if (match) {
+                                                                    const id = match[1];
+                                                                    const city_name = match[2];
+
+                                                                    return (
+                                                                        <Button
+                                                                            key={sourceIndex}
+                                                                            variant="outline-secondary"
+                                                                            size="sm"
+                                                                            href={`/destinations/${id}`}
+                                                                            className="text-nowrap"
+                                                                        >
+                                                                            {city_name}
+                                                                        </Button>
+                                                                    );
+                                                                }
+                                                                return null; // Don't render anything for non-matching lines
+                                                            })}
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
