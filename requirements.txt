@@ -23,6 +23,7 @@ cryptography==45.0.5
 dataclasses-json==0.6.7
 debugpy==1.8.14
 decorator==5.2.1
+deprecation==2.1.0
 distro==1.9.0
 dnspython==2.7.0
 docopt==0.6.2
@@ -44,12 +45,15 @@ googleapis-common-protos==1.70.0
 greenlet==3.2.3
 grpcio==1.73.1
 h11==0.16.0
+h2==4.2.0
+hpack==4.1.0
 httpcore==1.0.9
 httptools==0.6.4
 httpx==0.28.1
 httpx-sse==0.4.1
 huggingface-hub==0.33.4
 humanfriendly==10.0
+hyperframe==6.1.0
 idna==3.10
 importlib_metadata==8.7.0
 importlib_resources==6.5.2
@@ -107,6 +111,7 @@ passlib==1.7.4
 pgvector==0.3.6
 pipreqs==0.4.13
 platformdirs==4.3.8
+postgrest==1.1.1
 posthog==5.4.0
 prompt_toolkit==3.0.51
 propcache==0.3.2
@@ -125,6 +130,7 @@ pydantic==2.11.7
 pydantic-settings==2.10.1
 pydantic_core==2.33.2
 Pygments==2.19.2
+PyJWT==2.10.1
 PyPika==0.48.9
 pyproject_hooks==1.2.0
 pyreadline3==3.5.4
@@ -136,6 +142,7 @@ pytz==2025.2
 pywin32==310
 PyYAML==6.0.2
 pyzmq==27.0.0
+realtime==2.7.0
 referencing==0.36.2
 regex==2024.11.6
 requests==2.32.4
@@ -157,6 +164,11 @@ SQLAlchemy==2.0.41
 sqlmodel==0.0.24
 stack-data==0.6.3
 starlette==0.47.1
+storage3==0.12.1
+StrEnum==0.4.15
+supabase==2.18.1
+supabase_auth==2.12.3
+supabase_functions==0.10.1
 sympy==1.14.0
 tenacity==9.1.2
 threadpoolctl==3.6.0
