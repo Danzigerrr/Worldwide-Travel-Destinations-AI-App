@@ -71,8 +71,6 @@ async def create_user(create_user_request: UserCreateRequest):
         "hashed_password": bcrypt_context.hash(create_user_request.password)
     }
     
-    # Supabase provides built-in authentication, which is often preferred.
-    # However, to mirror your current code's logic, we'll save to a 'users' table.
     try:
         response = supabase.table("users").insert(new_user).execute()
         if not response.data:
