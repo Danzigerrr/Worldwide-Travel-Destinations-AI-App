@@ -22,10 +22,24 @@ function MultiSelect({ label, options = [], selected = [], onChange }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const toggleOption = (value) => {
-        const newSelected = selected.includes(value)
-            ? selected.filter(v => v !== value)
-            : [...selected, value];
+    // Normalize options to objects { value: string, label: string }
+    const normalizedOptions = options.map(opt => {
+        if (opt && typeof opt === 'object' && 'value' in opt && 'label' in opt) {
+            return { value: String(opt.value), label: String(opt.label) };
+        }
+        return { value: String(opt), label: String(opt) };
+    });
+
+    // Work with selected values as strings for consistent comparison
+    const selectedStrings = selected.map(v => String(v));
+    const selectedSet = new Set(selectedStrings);
+
+    const toggleOption = (valueStr) => {
+        // valueStr is already a string
+        const isSelected = selectedSet.has(valueStr);
+        const newSelected = isSelected
+            ? selected.filter(v => String(v) !== valueStr)
+            : [...selectedStrings, valueStr]; // return strings (backend expects strings)
         onChange(newSelected);
     };
 
@@ -41,16 +55,16 @@ function MultiSelect({ label, options = [], selected = [], onChange }) {
             </button>
             {open && (
                 <div className="absolute mt-1 w-full bg-grey border rounded shadow max-h-60 overflow-auto z-10">
-                    {options.length > 0 ? (
-                        options.map(opt => (
-                            <label key={opt} className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
+                    {normalizedOptions.length > 0 ? (
+                        normalizedOptions.map(opt => (
+                            <label key={opt.value} className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    checked={selected.includes(opt)}
-                                    onChange={() => toggleOption(opt)}
+                                    checked={selectedSet.has(opt.value)}
+                                    onChange={() => toggleOption(opt.value)}
                                     className="mr-2"
                                 />
-                                <span>{opt}</span>
+                                <span>{opt.label}</span>
                             </label>
                         ))
                     ) : (
@@ -61,6 +75,7 @@ function MultiSelect({ label, options = [], selected = [], onChange }) {
         </div>
     );
 }
+
 
 export default function DestinationsListPage() {
     const router = useRouter();
@@ -173,10 +188,12 @@ export default function DestinationsListPage() {
     const handleDynamicFilterSelection = (feature, value) => {
         setFilters(prevFilters => ({
             ...prevFilters,
-            [feature]: [value]
+            [feature]: [String(value)]
         }));
         setGeneratedDynamicFilters([]); // Clear dynamic filters
     };
+
+
 
     // Effect to fetch initial filter options ONCE when the component mounts
     useEffect(() => {
@@ -258,7 +275,12 @@ export default function DestinationsListPage() {
                     <MultiSelect label="Wellness" options={sortedWellnessOptions} selected={filters.wellness} onChange={handleFilterChange('wellness')} />
                     <MultiSelect label="Urban" options={sortedUrbanOptions} selected={filters.urban} onChange={handleFilterChange('urban')} />
                     <MultiSelect label="Seclusion" options={sortedSeclusionOptions} selected={filters.seclusion} onChange={handleFilterChange('seclusion')} />
-                    <MultiSelect label="Trip Type" options={sortedTripTypeOptions.map(humanize)} selected={filters.trip_type} onChange={handleFilterChange('trip_type')} />
+                    <MultiSelect
+                    label="Trip Type"
+                    options={sortedTripTypeOptions.map(v => ({ value: v, label: humanize(v) }))}
+                    selected={filters.trip_type}
+                    onChange={handleFilterChange('trip_type')}
+                    />               
                 </div>
 
                 <div className="flex space-x-2 mt-4">
