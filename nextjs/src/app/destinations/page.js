@@ -302,13 +302,16 @@ export default function DestinationsListPage() {
             {/* --- Dynamic Filters Section --- */}
             <div className="mb-6 p-4 bg-yellow-50 rounded space-y-4">
                 <h2 className="text-lg font-semibold">Dynamic Filter Suggestions</h2>
+                {generatedDynamicFilters.length === 0 && (
                 <button
                     onClick={fetchDynamicFiltersFromBackend}
                     className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
                     disabled={generatingDynamicFilters}
+                    aria-hidden={generatingDynamicFilters ? "true" : "false"}
                 >
                     {generatingDynamicFilters ? 'Generating...' : 'Get Dynamic Filter Suggestions'}
                 </button>
+                )}
 
                 {dynamicFilterError && (
                     <p className="text-red-600 mt-2">Error generating suggestions: {dynamicFilterError.message}</p>
