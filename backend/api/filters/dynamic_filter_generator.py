@@ -95,7 +95,7 @@ class DynamicFilterGenerator:
         ]
 
         response = client.responses.parse(
-            model="gpt-4o-mini",
+            model="gpt-5-nano",
             temperature=0.8,
             input=messages,
             text_format=DynamicFilterList

@@ -64,7 +64,6 @@ This project is a monorepo with separate folders for the frontend and backend.
 
   * Node.js (v18+)
   * Python (v3.10+)
-  * Docker and Docker Compose
   * An OpenAI API Key
   * A Supabase project URL and API Key
 
@@ -80,7 +79,7 @@ This project is a monorepo with separate folders for the frontend and backend.
 2.  **Set up environment variables:**
 
       * Create a `.env` file in the `backend/` directory.
-      * Create a `.env.local` file in the `frontend/` directory.
+      * Create a `.env` file in the `nextjs/` directory.
 
     **Backend `.env`:**
 
@@ -92,7 +91,7 @@ This project is a monorepo with separate folders for the frontend and backend.
     SUPABASE_CONNECTION_STRING=...
     ```
 
-    **Frontend `.env.local`:**
+    **Frontend (nextjs) `.env`:**
 
     ```bash
     NEXT_PUBLIC_BACKEND_API_URL="http://localhost:8000"
@@ -120,10 +119,10 @@ The backend will be accessible at `http://localhost:8000`.
 
 ### 2\. Run the Frontend
 
-In a new terminal window, navigate to the `frontend/` directory and start the Next.js development server.
+In a new terminal window, navigate to the `nextjs/` directory and start the Next.js development server.
 
 ```bash
-cd frontend
+cd nextjs
 npm install
 npm run dev
 ```

@@ -1,0 +1,43 @@
+[1mdiff --git a/README.md b/README.md[m
+[1mindex e1c6e7b..69708e6 100644[m
+[1m--- a/README.md[m
+[1m+++ b/README.md[m
+[36m@@ -64,7 +64,6 @@[m [mThis project is a monorepo with separate folders for the frontend and backend.[m
+ [m
+   * Node.js (v18+)[m
+   * Python (v3.10+)[m
+[31m-  * Docker and Docker Compose[m
+   * An OpenAI API Key[m
+   * A Supabase project URL and API Key[m
+ [m
+[36m@@ -80,7 +79,7 @@[m [mThis project is a monorepo with separate folders for the frontend and backend.[m
+ 2.  **Set up environment variables:**[m
+ [m
+       * Create a `.env` file in the `backend/` directory.[m
+[31m-      * Create a `.env.local` file in the `frontend/` directory.[m
+[32m+[m[32m      * Create a `.env` file in the `nextjs/` directory.[m
+ [m
+     **Backend `.env`:**[m
+ [m
+[36m@@ -92,7 +91,7 @@[m [mThis project is a monorepo with separate folders for the frontend and backend.[m
+     SUPABASE_CONNECTION_STRING=...[m
+     ```[m
+ [m
+[31m-    **Frontend `.env.local`:**[m
+[32m+[m[32m    **Frontend (nextjs) `.env`:**[m
+ [m
+     ```bash[m
+     NEXT_PUBLIC_BACKEND_API_URL="http://localhost:8000"[m
+[36m@@ -120,10 +119,10 @@[m [mThe backend will be accessible at `http://localhost:8000`.[m
+ [m
+ ### 2\. Run the Frontend[m
+ [m
+[31m-In a new terminal window, navigate to the `frontend/` directory and start the Next.js development server.[m
+[32m+[m[32mIn a new terminal window, navigate to the `nextjs/` directory and start the Next.js development server.[m
+ [m
+ ```bash[m
+[31m-cd frontend[m
+[32m+[m[32mcd nextjs[m
+ npm install[m
+ npm run dev[m
+ ```[m
