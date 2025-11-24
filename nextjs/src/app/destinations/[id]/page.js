@@ -14,6 +14,8 @@ export default function DestinationDetailsPage() {
     const [destination, setDestination] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [imageUrl, setImageUrl] = useState(null);
+    const [imageStatus, setImageStatus] = useState("idle");
 
     const mapPosition = useMemo(() => {
         if (!destination) return null;
@@ -44,6 +46,35 @@ export default function DestinationDetailsPage() {
         })();
     }, [destinationId]);
 
+    useEffect(() => {
+        if (!destination) return;
+      
+        const fetchImage = async () => {
+            try {
+                setImageStatus("loading");
+                setImageUrl(null);
+
+                const res = await axios.get("/api/wiki-image", {
+                    params: { title: destination.city },
+                });
+
+                const image = res.data?.imageUrl;
+                if (image) {
+                    setImageUrl(image);
+                    setImageStatus("success");
+                } else {
+                    setImageStatus("empty");
+                }
+            } catch (imgErr) {
+                console.error("Failed to fetch destination image", imgErr);
+                setImageStatus("error");
+            }
+        };
+      
+        fetchImage();
+      }, [destination]);
+      
+
     if (loading) return <p>Loading...</p>;
     if (error) return <p className="text-red-600">Error: {error.message}</p>;
     if (!destination) return <p>Destination not found.</p>;
@@ -68,6 +99,45 @@ export default function DestinationDetailsPage() {
                                     {destination.latitude}, {destination.longitude}
                                 </dd>
                             </dl>
+                            <div className="mt-3">
+                                {imageStatus === "loading" && (
+                                    <p className="text-muted small mb-0">Loading image...</p>
+                                )}
+                                {imageStatus === "success" && imageUrl && (
+                                    <div
+                                        className="rounded shadow-sm d-flex align-items-center justify-content-center"
+                                        style={{
+                                            width: "100%",
+                                            minHeight: "240px",
+                                            maxHeight: "320px",
+                                            backgroundColor: "#f8f9fa",
+                                            border: "1px solid #e5e7eb",
+                                            overflow: "hidden",
+                                        }}
+                                    >
+                                        <img
+                                            src={imageUrl}
+                                            alt={`${destination.city} preview`}
+                                            style={{
+                                                maxWidth: "100%",
+                                                maxHeight: "100%",
+                                                objectFit: "contain",
+                                            }}
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                )}
+                                {imageStatus === "empty" && (
+                                    <p className="text-muted small mb-0">
+                                        No photo available for this destination.
+                                    </p>
+                                )}
+                                {imageStatus === "error" && (
+                                    <p className="text-danger small mb-0">
+                                        Failed to load image. Please try again later.
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
