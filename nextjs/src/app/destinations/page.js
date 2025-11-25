@@ -34,6 +34,7 @@ function MultiSelect({ label, options = [], selected = [], onChange }) {
     // Work with selected values as strings for consistent comparison
     const selectedStrings = selected.map(v => String(v));
     const selectedSet = new Set(selectedStrings);
+    const hasSelection = selectedStrings.length > 0;
 
     const toggleOption = (valueStr) => {
         // valueStr is already a string
@@ -58,7 +59,7 @@ function MultiSelect({ label, options = [], selected = [], onChange }) {
             <button
                 type="button"
                 onClick={() => setOpen(o => !o)}
-                className="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center text-start rounded-pill shadow-sm"
+                className={`btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center text-start rounded-pill shadow-sm ${hasSelection ? 'bg-light border-primary text-primary' : ''}`}
             >
                 <span>{label}</span>
                 <span>{open ? '▴' : '▾'}</span>
