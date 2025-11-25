@@ -1,3 +1,7 @@
+"use client";
+
+import DestinationsGlobe from "./DestinationsGlobe";
+
 export default function DestinationsList({ destinations, tripTypes = [], humanize, router }) {
     const featureKeys = [
         { key: "nature", label: "Nature" },
@@ -13,6 +17,24 @@ export default function DestinationsList({ destinations, tripTypes = [], humaniz
     return (
         <div className="container px-0">
             <div className="row g-4">
+                <div className="col-12">
+                    <div className="card border-0 shadow-sm">
+                        <div className="card-body">
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h2 className="h5 mb-1">Globe Overview</h2>
+                                    <p className="text-muted small mb-0">
+                                        Scroll or pinch to zoom, drag to rotate, tap a pin for more details.
+                                    </p>
+                                </div>
+                                <span className="badge bg-primary-subtle text-primary">
+                                    {destinations.length} destinations
+                                </span>
+                            </div>
+                            <DestinationsGlobe destinations={destinations} height={360} />
+                        </div>
+                    </div>
+                </div>
                 {destinations.map((dest) => (
                     <div key={dest.id} className="col-12 col-md-6 col-xl-4">
                         <div className="card shadow-sm h-100 border-0">

@@ -6,6 +6,7 @@ import axios from 'axios';
 import qs from 'qs';
 
 import DestinationsList from '../components/DestinationsList';
+import DestinationsGlobe from '../components/DestinationsGlobe';
 
 // Generic multi-select dropdown component
 function MultiSelect({ label, options = [], selected = [], onChange }) {
@@ -380,26 +381,50 @@ export default function DestinationsListPage() {
 
                 <div className="col-12 col-lg-8">
                     <div className="card shadow-sm h-100">
-                        <div className="card-body">
-                            <div className="d-flex justify-content-between align-items-center mb-4">
-                                <div>
-                                    <h2 className="h5 mb-1">Available Destinations</h2>
-                                    <p className="text-muted small mb-0">{destinations.length} matches found</p>
+                        <div className="card-body d-flex flex-column gap-4">
+                            <div>
+                                <div className="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <h2 className="h6 text-uppercase text-muted mb-0">Interactive Globe</h2>
+                                        <p className="text-muted small mb-0">Spin, zoom, and tap to inspect each destination.</p>
+                                    </div>
+                                    <span className="badge bg-primary-subtle text-primary">
+                                        {destinations.length} locations
+                                    </span>
                                 </div>
-                                <button className="btn btn-outline-primary btn-sm" onClick={applyFilters}>
-                                    Refresh
-                                </button>
+                                {loadingDestinations ? (
+                                    <div
+                                        className="d-flex align-items-center justify-content-center bg-light border rounded-4 text-muted"
+                                        style={{ height: 320 }}
+                                    >
+                                        Loading globe…
+                                    </div>
+                                ) : (
+                                    <DestinationsGlobe destinations={destinations} height={320} />
+                                )}
                             </div>
-                            {loadingDestinations && <p className="text-muted">Loading destinations…</p>}
-                            {errorDestinations && <p className="text-danger">Error loading destinations: {errorDestinations.message}</p>}
-                            {!loadingDestinations && !errorDestinations && (
-                                <DestinationsList
-                                    destinations={destinations}
-                                    tripTypes={possibleFilterOptions.trip_type}
-                                    humanize={humanize}
-                                    router={router}
-                                />
-                            )}
+
+                            <div>
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h2 className="h5 mb-1">Available Destinations</h2>
+                                        <p className="text-muted small mb-0">{destinations.length} matches found</p>
+                                    </div>
+                                    <button className="btn btn-outline-primary btn-sm" onClick={applyFilters}>
+                                        Refresh
+                                    </button>
+                                </div>
+                                {loadingDestinations && <p className="text-muted">Loading destinations…</p>}
+                                {errorDestinations && <p className="text-danger">Error loading destinations: {errorDestinations.message}</p>}
+                                {!loadingDestinations && !errorDestinations && (
+                                    <DestinationsList
+                                        destinations={destinations}
+                                        tripTypes={possibleFilterOptions.trip_type}
+                                        humanize={humanize}
+                                        router={router}
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
