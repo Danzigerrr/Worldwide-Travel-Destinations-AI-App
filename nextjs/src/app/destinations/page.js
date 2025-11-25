@@ -286,7 +286,6 @@ export default function DestinationsListPage() {
         <div className="container py-4">
             <div className="mb-4">
                 <h1 className="h3 mb-1">Destination Explorer</h1>
-                <p className="text-muted mb-0">Tune the filters to uncover the best matches for your next trip.</p>
             </div>
 
             <div className="row g-4">
@@ -385,8 +384,8 @@ export default function DestinationsListPage() {
                             <div>
                                 <div className="d-flex justify-content-between align-items-center mb-2">
                                     <div>
-                                        <h2 className="h6 text-uppercase text-muted mb-0">Interactive Globe</h2>
-                                        <p className="text-muted small mb-0">Spin, zoom, and tap to inspect each destination.</p>
+                                        <h2 className="h5 mb-1">Interactive Globe</h2>
+                                        <p className="text-muted small mb-0">Spin, zoom, and tap to inspect each destination</p>
                                     </div>
                                     <span className="badge bg-primary-subtle text-primary">
                                         {destinations.length} locations

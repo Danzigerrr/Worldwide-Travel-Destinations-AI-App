@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const GLOBE_TEXTURE = "//cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg";
+const GLOBE_TEXTURE = "//cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg";
 const GLOBE_BUMP = "//cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png";
 
 const markerSvg = `<svg viewBox="-4 0 36 36">
@@ -87,7 +87,15 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
                                 x: null,
                                 y: null,
                             });
-                            globeInstance.pointOfView({ lat: d.lat, lng: d.lng, altitude: 0.6 }, 200);
+                            const currentView = globeInstance.pointOfView();
+                            const desiredAltitude =
+                                currentView && typeof currentView.altitude === "number" && currentView.altitude < 0.4
+                                    ? currentView.altitude
+                                    : 0.4;
+                            globeInstance.pointOfView(
+                                { lat: d.lat, lng: d.lng, altitude: desiredAltitude },
+                                200
+                            );
                         };
                         return el;
                     })
@@ -160,6 +168,29 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
         };
     };
 
+    const adjustZoom = (direction) => {
+        if (!globeRef.current) return;
+        const currentView = globeRef.current.pointOfView();
+        const currentAltitude =
+            currentView && typeof currentView.altitude === "number" ? currentView.altitude : 1;
+        const factor = direction === "in" ? 0.85 : 1.15;
+        const minAltitude = 0.2;
+        const maxAltitude = 3.5;
+        const nextAltitude = Math.min(
+            maxAltitude,
+            Math.max(minAltitude, currentAltitude * factor)
+        );
+
+        globeRef.current.pointOfView(
+            {
+                lat: currentView?.lat ?? 0,
+                lng: currentView?.lng ?? 0,
+                altitude: nextAltitude,
+            },
+            300
+        );
+    };
+
     useEffect(() => {
         if (!popup?.markerEl) return;
 
@@ -198,6 +229,26 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
                 }}
             />
 
+            <div
+                className="position-absolute top-0 end-0 m-3 d-flex flex-column gap-2"
+                style={{ zIndex: 6000 }}
+            >
+                <button
+                    type="button"
+                    className="btn btn-light btn-sm shadow-sm"
+                    onClick={() => adjustZoom("in")}
+                >
+                    +
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-light btn-sm shadow-sm"
+                    onClick={() => adjustZoom("out")}
+                >
+                    −
+                </button>
+            </div>
+
             {popup?.destination && (
                 <div
                     className="globe-popup position-absolute bg-white rounded-3 shadow p-3"
@@ -225,9 +276,6 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
                             onClick={() => setPopup(null)}
                         />
                     </div>
-                    <ul className="list-unstyled small mb-0">
-                        <li>Lat/Lng: {popup.destination.latitude}, {popup.destination.longitude}</li>
-                    </ul>
                     <button
                         type="button"
                         className="btn btn-primary w-100 btn-sm mt-3"

@@ -112,7 +112,6 @@ export default function DestinationDetailsPage() {
                                             maxHeight: "320px",
                                             backgroundColor: "#f8f9fa",
                                             border: "1px solid #e5e7eb",
-                                            overflow: "hidden",
                                         }}
                                     >
                                         <img
@@ -121,7 +120,11 @@ export default function DestinationDetailsPage() {
                                             style={{
                                                 maxWidth: "100%",
                                                 maxHeight: "100%",
+                                                width: "auto",
+                                                height: "auto",
                                                 objectFit: "contain",
+                                                objectPosition: "center",
+                                                borderRadius: "0.75rem",
                                             }}
                                             loading="lazy"
                                         />
