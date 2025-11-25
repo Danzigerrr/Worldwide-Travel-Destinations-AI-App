@@ -282,101 +282,128 @@ export default function DestinationsListPage() {
 
 
     return (
-        <div className="p-6">
-            <h1 className="text-2xl mb-4">Destinations searcher</h1>
-
-            {/* Existing Filters Section */}
-            <div className="mb-6 p-4 bg-gray-50 rounded space-y-4">
-                <h2 className="text-lg font-semibold">Filters</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    <MultiSelect label="Region" options={sortedRegionOptions} selected={filters.region} onChange={handleFilterChange('region')} />
-                    <MultiSelect label="Country" options={sortedCountryOptions} selected={filters.country} onChange={handleFilterChange('country')} />
-                    <MultiSelect label="Budget" options={sortedBudgetOptions} selected={filters.budget_level} onChange={handleFilterChange('budget_level')} />
-                    <MultiSelect label="Culture" options={sortedCultureOptions} selected={filters.culture} onChange={handleFilterChange('culture')} />
-                    <MultiSelect label="Adventure" options={sortedAdventureOptions} selected={filters.adventure} onChange={handleFilterChange('adventure')} />
-                    <MultiSelect label="Nature" options={sortedNatureOptions} selected={filters.nature} onChange={handleFilterChange('nature')} />
-                    <MultiSelect label="Beaches" options={sortedBeachesOptions} selected={filters.beaches} onChange={handleFilterChange('beaches')} />
-                    <MultiSelect label="Nightlife" options={sortedNightlifeOptions} selected={filters.nightlife} onChange={handleFilterChange('nightlife')} />
-                    <MultiSelect label="Cuisine" options={sortedCuisineOptions} selected={filters.cuisine} onChange={handleFilterChange('cuisine')} />
-                    <MultiSelect label="Wellness" options={sortedWellnessOptions} selected={filters.wellness} onChange={handleFilterChange('wellness')} />
-                    <MultiSelect label="Urban" options={sortedUrbanOptions} selected={filters.urban} onChange={handleFilterChange('urban')} />
-                    <MultiSelect label="Seclusion" options={sortedSeclusionOptions} selected={filters.seclusion} onChange={handleFilterChange('seclusion')} />
-                    <MultiSelect
-                    label="Trip Type"
-                    options={sortedTripTypeOptions.map(v => ({ value: v, label: humanize(v) }))}
-                    selected={filters.trip_type}
-                    onChange={handleFilterChange('trip_type')}
-                    />               
-                </div>
-
-                <div className="flex space-x-2 mt-4">
-                    <button
-                        onClick={applyFilters}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                    >
-                        Apply Filters
-                    </button>
-                    <button
-                        onClick={resetFilters}
-                        className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors"
-                    >
-                        Reset Filters
-                    </button>
-                </div>
+        <div className="container py-4">
+            <div className="mb-4">
+                <h1 className="h3 mb-1">Destination Explorer</h1>
+                <p className="text-muted mb-0">Tune the filters to uncover the best matches for your next trip.</p>
             </div>
 
-            {/* --- Dynamic Filters Section --- */}
-            <div className="mb-6 p-4 bg-yellow-50 rounded space-y-4">
-                <h2 className="text-lg font-semibold">Dynamic Filter Suggestions</h2>
-                {generatedDynamicFilters.length === 0 && (
-                <button
-                    onClick={fetchDynamicFiltersFromBackend}
-                    className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
-                    disabled={generatingDynamicFilters}
-                    aria-hidden={generatingDynamicFilters ? "true" : "false"}
-                >
-                    {generatingDynamicFilters ? 'Generating...' : 'Get Dynamic Filter Suggestions'}
-                </button>
-                )}
-
-                {dynamicFilterError && (
-                    <p className="text-red-600 mt-2">Error generating suggestions: {dynamicFilterError.message}</p>
-                )}
-
-                {generatedDynamicFilters.length > 0 && (
-                    <div className="space-y-4 mt-4">
-                        {generatedDynamicFilters.map((df, index) => (
-                            <div key={index} className="border p-3 rounded bg-grey shadow-sm">
-                                <p className="font-medium text-black-700 mb-2">{df.question}</p>
-                                <div className="flex flex-wrap gap-3">
-                                    {Object.entries(df.value_meanings).map(([value, meaning]) => (
-                                        <button
-                                            key={value}
-                                            onClick={() => handleDynamicFilterSelection(df.feature, value)}
-                                            className={`px-3 py-1 rounded text-sm transition-colors
-                                                ${filters[df.feature].includes(value)
-                                                ? 'bg-blue-500 text-white'
-                                                : 'bg-gray-200 text-gray-800 hover:bg-blue-200'
-                                            }`}
-                                        >
-                                            {meaning}
-                                        </button>
-                                    ))}
+            <div className="row g-4">
+                <div className="col-12 col-lg-4">
+                    <div className="card shadow-sm mb-4">
+                        <div className="card-body">
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h2 className="h6 text-uppercase text-muted mb-0">Filters</h2>
+                                <span className="badge bg-light text-dark">{destinations.length} results</span>
+                            </div>
+                            <div className="row row-cols-1 g-3">
+                                <div className="col"><MultiSelect label="Region" options={sortedRegionOptions} selected={filters.region} onChange={handleFilterChange('region')} /></div>
+                                <div className="col"><MultiSelect label="Country" options={sortedCountryOptions} selected={filters.country} onChange={handleFilterChange('country')} /></div>
+                                <div className="col"><MultiSelect label="Budget" options={sortedBudgetOptions} selected={filters.budget_level} onChange={handleFilterChange('budget_level')} /></div>
+                                <div className="col"><MultiSelect label="Culture" options={sortedCultureOptions} selected={filters.culture} onChange={handleFilterChange('culture')} /></div>
+                                <div className="col"><MultiSelect label="Adventure" options={sortedAdventureOptions} selected={filters.adventure} onChange={handleFilterChange('adventure')} /></div>
+                                <div className="col"><MultiSelect label="Nature" options={sortedNatureOptions} selected={filters.nature} onChange={handleFilterChange('nature')} /></div>
+                                <div className="col"><MultiSelect label="Beaches" options={sortedBeachesOptions} selected={filters.beaches} onChange={handleFilterChange('beaches')} /></div>
+                                <div className="col"><MultiSelect label="Nightlife" options={sortedNightlifeOptions} selected={filters.nightlife} onChange={handleFilterChange('nightlife')} /></div>
+                                <div className="col"><MultiSelect label="Cuisine" options={sortedCuisineOptions} selected={filters.cuisine} onChange={handleFilterChange('cuisine')} /></div>
+                                <div className="col"><MultiSelect label="Wellness" options={sortedWellnessOptions} selected={filters.wellness} onChange={handleFilterChange('wellness')} /></div>
+                                <div className="col"><MultiSelect label="Urban" options={sortedUrbanOptions} selected={filters.urban} onChange={handleFilterChange('urban')} /></div>
+                                <div className="col"><MultiSelect label="Seclusion" options={sortedSeclusionOptions} selected={filters.seclusion} onChange={handleFilterChange('seclusion')} /></div>
+                                <div className="col">
+                                    <MultiSelect
+                                        label="Trip Type"
+                                        options={sortedTripTypeOptions.map(v => ({ value: v, label: humanize(v) }))}
+                                        selected={filters.trip_type}
+                                        onChange={handleFilterChange('trip_type')}
+                                    />
                                 </div>
                             </div>
-                        ))}
+                            <div className="d-flex gap-2 mt-4">
+                                <button onClick={applyFilters} className="btn btn-primary flex-fill">
+                                    Apply Filters
+                                </button>
+                                <button onClick={resetFilters} className="btn btn-outline-secondary flex-fill">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                )}
-            </div>
 
-            {/* Destinations List */}
-            <hr className="my-6" /> {/* Optional separator */}
-            <h2 className="text-xl mb-4">Available Destinations ({destinations.length})</h2>
-            {loadingDestinations && <p>Loading destinations…</p>}
-            {errorDestinations && <p className="text-red-600">Error loading destinations: {errorDestinations.message}</p>}
-            {!loadingDestinations && !errorDestinations && (
-                <DestinationsList destinations={destinations} tripTypes={possibleFilterOptions.trip_type} humanize={humanize} router={router} />
-            )}
+                    <div className="card shadow-sm">
+                        <div className="card-body">
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h2 className="h6 text-uppercase text-muted mb-0">Dynamic Filter Suggestions</h2>
+                                <span className="badge bg-warning text-dark">Beta</span>
+                            </div>
+                            {generatedDynamicFilters.length === 0 && (
+                                <button
+                                    onClick={fetchDynamicFiltersFromBackend}
+                                    className="btn btn-outline-primary w-100"
+                                    disabled={generatingDynamicFilters}
+                                    aria-hidden={generatingDynamicFilters ? "true" : "false"}
+                                >
+                                    {generatingDynamicFilters ? 'Generating...' : 'Get Suggestions'}
+                                </button>
+                            )}
+
+                            {dynamicFilterError && (
+                                <p className="text-danger small mt-2">Error generating suggestions: {dynamicFilterError.message}</p>
+                            )}
+
+                            {generatedDynamicFilters.length > 0 && (
+                                <div className="mt-3">
+                                    {generatedDynamicFilters.map((df, index) => (
+                                        <div key={index} className="border rounded-3 p-3 mb-3 bg-light">
+                                            <p className="fw-semibold mb-2">{df.question}</p>
+                                            <div className="d-flex flex-wrap gap-2">
+                                                {Object.entries(df.value_meanings).map(([value, meaning]) => (
+                                                    <button
+                                                        key={value}
+                                                        onClick={() => handleDynamicFilterSelection(df.feature, value)}
+                                                        className={`btn btn-sm rounded-pill ${
+                                                            filters[df.feature].includes(value)
+                                                                ? 'btn-primary text-white'
+                                                                : 'btn-outline-secondary'
+                                                        }`}
+                                                    >
+                                                        {meaning}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col-12 col-lg-8">
+                    <div className="card shadow-sm h-100">
+                        <div className="card-body">
+                            <div className="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h2 className="h5 mb-1">Available Destinations</h2>
+                                    <p className="text-muted small mb-0">{destinations.length} matches found</p>
+                                </div>
+                                <button className="btn btn-outline-primary btn-sm" onClick={applyFilters}>
+                                    Refresh
+                                </button>
+                            </div>
+                            {loadingDestinations && <p className="text-muted">Loading destinations…</p>}
+                            {errorDestinations && <p className="text-danger">Error loading destinations: {errorDestinations.message}</p>}
+                            {!loadingDestinations && !errorDestinations && (
+                                <DestinationsList
+                                    destinations={destinations}
+                                    tripTypes={possibleFilterOptions.trip_type}
+                                    humanize={humanize}
+                                    router={router}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
