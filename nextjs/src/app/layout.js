@@ -1,4 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
+import "leaflet/dist/leaflet.css";
+import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 import { Inter } from 'next/font/google';
 import "./globals.css";
 import Navbar from './components/Navbar';
