@@ -43,32 +43,58 @@ function MultiSelect({ label, options = [], selected = [], onChange }) {
         onChange(newSelected);
     };
 
+    // Dynamically size dropdown width based on available options
+    const dropdownWidth = (() => {
+        const optionCount = normalizedOptions.length || 1;
+        const widthPerOption = 14; // px per option to scale width smoothly
+        const baseWidth = 180;
+        const maxWidth = 420;
+        return Math.min(maxWidth, baseWidth + optionCount * widthPerOption);
+    })();
+
     return (
         <div className="relative" ref={containerRef}>
             <button
                 type="button"
                 onClick={() => setOpen(o => !o)}
-                className="btn w-full p-2 border rounded text-left flex justify-between items-center bg-white hover:bg-gray-50 transition-colors"
+                className="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center text-start rounded-pill shadow-sm"
             >
                 <span>{label}</span>
                 <span>{open ? '▴' : '▾'}</span>
             </button>
             {open && (
-                <div className="absolute mt-1 w-full bg-grey border rounded shadow max-h-60 overflow-auto z-10">
+                <div
+                    className="dropdown-menu show border-0 shadow-lg p-0 mt-2"
+                    style={{
+                        width: `${dropdownWidth}px`,
+                        maxHeight: "240px",
+                        overflowY: "auto",
+                    }}
+                >
                     {normalizedOptions.length > 0 ? (
-                        normalizedOptions.map(opt => (
-                            <label key={opt.value} className="flex items-center p-2 hover:bg-gray-50 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedSet.has(opt.value)}
-                                    onChange={() => toggleOption(opt.value)}
-                                    className="mr-2"
-                                />
-                                <span>{opt.label}</span>
-                            </label>
-                        ))
+                        normalizedOptions.map(opt => {
+                            const isSelected = selectedSet.has(opt.value);
+                            return (
+                                <label
+                                    key={opt.value}
+                                    className={`dropdown-item d-flex align-items-center justify-content-between gap-2 ${isSelected ? "active text-white" : ""}`}
+                                    style={{ cursor: "pointer" }}
+                                >
+                                    <div className="d-flex align-items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() => toggleOption(opt.value)}
+                                            className="form-check-input"
+                                        />
+                                        <span>{opt.label}</span>
+                                    </div>
+                                    {isSelected && <span className="badge bg-light text-primary">Selected</span>}
+                                </label>
+                            );
+                        })
                     ) : (
-                        <p className="p-2 text-gray-500">No options available</p>
+                        <p className="px-3 py-2 text-muted small mb-0">No options available</p>
                     )}
                 </div>
             )}
