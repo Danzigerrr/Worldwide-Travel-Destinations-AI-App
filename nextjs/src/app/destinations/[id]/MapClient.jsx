@@ -31,8 +31,8 @@ export default function MapClient({ position, destination, height = 400 }) {
                 .addTo(mapInstance)
                 .bindPopup(
                     `<strong>${destination.city}, ${destination.country}</strong><br/>` +
-                    `Region: ${destination.region}<br/>` +
-                    `Lat/Lng: ${destination.latitude}, ${destination.longitude}`
+                    `Region: ${destination.region}<br/>` 
+                    // `Lat/Lng: ${destination.latitude}, ${destination.longitude}`
                 );
         })();
 

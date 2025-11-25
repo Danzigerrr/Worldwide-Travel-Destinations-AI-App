@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const GLOBE_TEXTURE = "//cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg";
 const GLOBE_BUMP = "//cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png";
@@ -14,6 +15,7 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
     const containerRef = useRef(null);
     const globeRef = useRef(null);
     const [popup, setPopup] = useState(null);
+    const router = useRouter();
 
     const validDestinations = useMemo(
         () =>
@@ -80,11 +82,12 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
                         el.onclick = (ev) => {
                             ev.stopPropagation();
                             setPopup({
-                                x: ev.clientX,
-                                y: ev.clientY,
+                                markerEl: el,
                                 destination: d.destination,
+                                x: null,
+                                y: null,
                             });
-                            globeInstance.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.8 }, 800);
+                            globeInstance.pointOfView({ lat: d.lat, lng: d.lng, altitude: 0.6 }, 200);
                         };
                         return el;
                     })
@@ -100,14 +103,14 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
                     globeInstance.pointOfView({ lat: 45, lng: 15, altitude: 2.2 }, 500);
                 } else if (validDestinations.length === 1) {
                     const only = validDestinations[0];
-                    globeInstance.pointOfView({ lat: only.lat, lng: only.lng, altitude: 1.8 }, 1000);
+                    globeInstance.pointOfView({ lat: only.lat, lng: only.lng, altitude: 1.8 }, 500);
                 } else {
                     const avgLat =
                         validDestinations.reduce((sum, dest) => sum + dest.lat, 0) / validDestinations.length;
                     const avgLng =
                         validDestinations.reduce((sum, dest) => sum + dest.lng, 0) / validDestinations.length;
                     // Use higher altitude to show more of the globe, centered on average location
-                    globeInstance.pointOfView({ lat: avgLat, lng: avgLng, altitude: 1.5 }, 1000);
+                    globeInstance.pointOfView({ lat: avgLat, lng: avgLng, altitude: 1.5 }, 500);
                 }
 
                 // Handle window resize
@@ -147,6 +150,41 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
         return () => document.removeEventListener("click", handleClickOutside, true);
     }, [popup]);
 
+    const computePopupPosition = (markerEl) => {
+        const containerRect = containerRef.current?.getBoundingClientRect();
+        const markerRect = markerEl?.getBoundingClientRect();
+        if (!containerRect || !markerRect) return null;
+        return {
+            x: markerRect.left - containerRect.left + markerRect.width / 2,
+            y: markerRect.top - containerRect.top - markerRect.height / 2,
+        };
+    };
+
+    useEffect(() => {
+        if (!popup?.markerEl) return;
+
+        const updatePosition = () => {
+            const coords = computePopupPosition(popup.markerEl);
+            if (!coords) return;
+            setPopup((prev) => {
+                if (!prev) return prev;
+                if (prev.x === coords.x && prev.y === coords.y) return prev;
+                return { ...prev, ...coords };
+            });
+        };
+
+        updatePosition();
+
+        const controls = globeRef.current?.controls?.();
+        controls?.addEventListener("change", updatePosition);
+        window.addEventListener("resize", updatePosition);
+
+        return () => {
+            controls?.removeEventListener("change", updatePosition);
+            window.removeEventListener("resize", updatePosition);
+        };
+    }, [popup?.markerEl]);
+
     return (
         <div className="position-relative d-flex align-items-center justify-content-center" style={{ width: "100%", height }}>
             <div
@@ -165,11 +203,12 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
                     className="globe-popup position-absolute bg-white rounded-3 shadow p-3"
                     style={{
                         minWidth: "200px",
-                        zIndex: 100,
-                        left: popup.x,
-                        top: popup.y,
-                        transform: "translate(-50%, -100%)",
+                        zIndex: 5000,
+                        left: `${popup.x ?? 0}px`,
+                        top: `${popup.y ?? 0}px`,
+                        transform: "translate(-50%, calc(-100% - 8px))",
                         pointerEvents: "auto",
+                        boxShadow: "0 8px 30px rgba(0,0,0,0.35)",
                     }}
                     onClick={(ev) => ev.stopPropagation()}
                 >
@@ -178,9 +217,6 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
                             <p className="fw-semibold mb-0">
                                 {popup.destination.city}, {popup.destination.country}
                             </p>
-                            <small className="text-muted">
-                                {popup.destination.region || "Unknown region"}
-                            </small>
                         </div>
                         <button
                             type="button"
@@ -190,10 +226,20 @@ export default function DestinationsGlobe({ destinations = [], height = 360 }) {
                         />
                     </div>
                     <ul className="list-unstyled small mb-0">
-                        <li>Budget: {popup.destination.budget_level || "N/A"}</li>
                         <li>Lat/Lng: {popup.destination.latitude}, {popup.destination.longitude}</li>
-                        <li>Culture: {popup.destination.culture ?? "—"}</li>
                     </ul>
+                    <button
+                        type="button"
+                        className="btn btn-primary w-100 btn-sm mt-3"
+                        onClick={(ev) => {
+                            ev.stopPropagation();
+                            if (popup.destination?.id) {
+                                router.push(`/destinations/${popup.destination.id}`);
+                            }
+                        }}
+                    >
+                        View Details
+                    </button>
                 </div>
             )}
         </div>
